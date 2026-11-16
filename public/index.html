@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OLD STOCK 챗봇</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Inter:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F4; --panel:#FFFFFF; --ink:#1C2733; --muted:#5E6B78; --line:#D6DDE4;
+  --brand:#1F4E5F; --brand-ink:#FFFFFF; --accent:#E8A33D; --bot:#F3F6F8; --user:#1F4E5F; --user-ink:#FFFFFF;
+  --chip:#FFFFFF; --chip-line:#B9C6D0; --warn:#9A5B00; --warn-bg:#FFF4E2;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10161C; --panel:#18212A; --ink:#E6ECF1; --muted:#9AA8B5; --line:#2B3742;
+    --brand:#5FA3B8; --brand-ink:#0D1A20; --accent:#F0B35A; --bot:#212C36; --user:#2F6F84; --user-ink:#F2F7FA;
+    --chip:#1E2832; --chip-line:#3C4C5A; --warn:#F0B35A; --warn-bg:#2A2216;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10161C; --panel:#18212A; --ink:#E6ECF1; --muted:#9AA8B5; --line:#2B3742;
+  --brand:#5FA3B8; --brand-ink:#0D1A20; --accent:#F0B35A; --bot:#212C36; --user:#2F6F84; --user-ink:#F2F7FA;
+  --chip:#1E2832; --chip-line:#3C4C5A; --warn:#F0B35A; --warn-bg:#2A2216;
+  color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;line-height:1.6}
+.app{height:100%;max-width:720px;margin:0 auto;display:flex;flex-direction:column;background:var(--panel);border-left:1px solid var(--line);border-right:1px solid var(--line)}
+header{padding:14px 18px 0;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:34px;height:34px;border-radius:10px;background:var(--brand);color:var(--brand-ink);display:grid;place-items:center;font-weight:600}
+.brand h1{font-size:16px;margin:0;font-weight:600}
+.brand p{margin:0;font-size:12.5px;color:var(--muted)}
+.status{margin-left:auto;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:#3BA776}
+.tabs{display:flex;gap:4px;margin-top:12px;overflow-x:auto}
+.tab{flex:1;min-width:max-content;border:0;background:none;color:var(--muted);font:inherit;font-size:14px;padding:10px 12px;border-bottom:3px solid transparent;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
+.tab small{display:block;font-size:11.5px;font-weight:400;color:var(--muted)}
+.tab:focus-visible,button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{flex:1;display:none;flex-direction:column;min-height:0}
+.panel.active{display:flex}
+.notice{margin:12px 16px 0;padding:8px 12px;border-radius:8px;background:var(--warn-bg);color:var(--warn);font-size:13px}
+.log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:8px;align-items:flex-end;max-width:100%}
+.row.user{justify-content:flex-end}
+.avatar{flex:none;width:28px;height:28px;border-radius:50%;background:var(--brand);color:var(--brand-ink);font-size:12px;display:grid;place-items:center;font-weight:600}
+.avatar.agent{background:var(--accent);color:#2A1A00}
+.bubble{max-width:78%;padding:10px 14px;border-radius:16px;white-space:pre-wrap;word-break:break-word}
+.bot .bubble{background:var(--bot);border-bottom-left-radius:4px}
+.user .bubble{background:var(--user);color:var(--user-ink);border-bottom-right-radius:4px}
+.time{font-size:11px;color:var(--muted);flex:none}
+.sys{align-self:center;font-size:12.5px;color:var(--muted);padding:2px 10px;border:1px dashed var(--line);border-radius:999px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding-left:36px}
+.chip{font:inherit;font-size:13.5px;padding:6px 12px;border-radius:999px;border:1px solid var(--chip-line);background:var(--chip);color:var(--ink);cursor:pointer}
+.chip:hover{border-color:var(--brand)}
+.chip:disabled{opacity:.45;cursor:default}
+.typing span{display:inline-block;width:6px;height:6px;margin:0 2px;border-radius:50%;background:var(--muted);animation:b 1s infinite}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,60%,100%{opacity:.3}30%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.typing span{animation:none}}
+.composer{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line);background:var(--panel)}
+.composer textarea{flex:1;resize:none;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;max-height:120px}
+.send{font:inherit;font-weight:600;border:0;border-radius:12px;padding:0 18px;background:var(--brand);color:var(--brand-ink);cursor:pointer}
+.send:disabled{opacity:.5;cursor:default}
+.reset{font:inherit;font-size:12.5px;border:0;background:none;color:var(--muted);cursor:pointer;text-decoration:underline;align-self:flex-start;margin:6px 16px 0}
+/* ---------- 탭 4: 미니멀 패션몰 테마 ---------- */
+.app.sleaze{--s-bg:#FFFFFF;--s-ink:#000000;--s-sub:#F4F4F4;--s-line:#E5E5E5;--s-muted:#7A7A7A;--s-me:#000000;--s-me-ink:#FFFFFF;background:var(--s-bg);color:var(--s-ink);border-color:var(--s-line)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .app.sleaze{--s-bg:#000000;--s-ink:#FFFFFF;--s-sub:#1A1A1A;--s-line:#2A2A2A;--s-muted:#8F8F8F;--s-me:#FFFFFF;--s-me-ink:#000000}}
+:root[data-theme="dark"] .app.sleaze{--s-bg:#000000;--s-ink:#FFFFFF;--s-sub:#1A1A1A;--s-line:#2A2A2A;--s-muted:#8F8F8F;--s-me:#FFFFFF;--s-me-ink:#000000}
+.app.sleaze header{background:var(--s-bg);border-bottom:1px solid var(--s-line)}
+.app.sleaze .brand{display:none}
+.app.sleaze .tab,.app.sleaze .tab small{color:var(--s-muted)}
+.app.sleaze .tab[aria-selected="true"]{color:var(--s-ink);border-bottom:2px solid var(--s-ink)}
+.app.sleaze .tab[aria-selected="true"] small{color:var(--s-ink)}
+.app.sleaze :focus-visible{outline-color:var(--s-ink)}
+.shophead{display:none}
+.app.sleaze .shophead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--s-line)}
+.shopname{font-family:Inter,"Helvetica Neue",Arial,sans-serif;font-weight:800;font-size:22px;letter-spacing:-.03em;line-height:1}
+.shopsub{font-size:12.5px;color:var(--s-muted)}
+.app.sleaze .notice{background:var(--s-sub);border-radius:0;color:var(--s-muted);font-size:12.5px}
+.app.sleaze .reset{color:var(--s-muted)}
+.app.sleaze .bubble{border-radius:4px}
+.app.sleaze .bot .bubble{background:var(--s-sub);color:var(--s-ink)}
+.app.sleaze .user .bubble{background:var(--s-me);color:var(--s-me-ink)}
+.app.sleaze .avatar{width:30px;height:30px;border-radius:0;background:var(--s-ink);color:var(--s-bg);font-family:Inter,"Helvetica Neue",Arial,sans-serif;font-weight:800;font-size:9px;letter-spacing:-.02em}
+.app.sleaze .time{color:var(--s-muted)}
+.app.sleaze .chips{padding-left:38px}
+.app.sleaze .chip{background:var(--s-bg);color:var(--s-ink);border:1px solid var(--s-line);border-radius:0;font-size:13px}
+.app.sleaze .chip:hover:not(:disabled){border-color:var(--s-ink)}
+.app.sleaze .typing span{background:var(--s-muted)}
+.app.sleaze .composer{background:var(--s-bg);border-top:1px solid var(--s-line)}
+.app.sleaze .composer textarea{background:var(--s-sub);color:var(--s-ink);border:1px solid transparent;border-radius:0}
+.app.sleaze .composer textarea:focus{border-color:var(--s-ink);outline:none}
+.app.sleaze .send{background:var(--s-ink);color:var(--s-bg);border-radius:0}
+.pcards{display:flex;gap:10px;overflow-x:auto;padding:2px 0 6px 38px;scrollbar-width:thin}
+.pcard{flex:none;width:136px}
+.pthumb{aspect-ratio:3/4;border:1px solid var(--s-line,var(--line));position:relative}
+.pcat{position:absolute;left:6px;bottom:6px;font-size:11px;padding:1px 6px;background:var(--s-bg,var(--panel));color:var(--s-ink,var(--ink))}
+.pbrand{margin-top:8px;font-family:Inter,"Helvetica Neue",Arial,sans-serif;font-weight:800;font-size:10.5px;letter-spacing:-.01em}
+.pname{font-size:13px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pprice{font-weight:600;font-size:14px;margin-top:2px}
+.pcolor{font-size:11.5px;color:var(--s-muted,var(--muted))}
+.adm-link{font-size:12.5px;color:var(--s-muted,var(--muted))}
+.app.sleaze .shophead{align-items:center}
+.login{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:11.5px;color:var(--s-muted,var(--muted));flex:none}
+.login select{font:inherit;font-size:13px;color:var(--s-ink,var(--ink));background:var(--s-sub,var(--bg));border:1px solid var(--s-line,var(--line));padding:4px 8px;border-radius:0;max-width:170px}
+.trk{margin-left:38px;border:1px solid var(--s-line,var(--line));padding:12px 14px;max-width:380px;font-size:13.5px}
+.trk dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0}
+.trk dt{color:var(--s-muted,var(--muted))}
+.trk dd{margin:0}
+#admin{display:none;max-width:1100px;margin:0 auto;padding:20px 18px 40px;color:var(--ink);--danger:#B42318}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #admin{--danger:#FF8A7A}}
+:root[data-theme="dark"] #admin{--danger:#FF8A7A}
+body.admin-mode{background:var(--panel)}
+body.admin-mode .app{display:none}
+body.admin-mode #admin{display:block}
+.adm-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.adm-logo{font-family:Inter,"Helvetica Neue",Arial,sans-serif;font-weight:800;font-size:22px;letter-spacing:-.03em}
+.adm-sub{font-size:13px;color:var(--muted);margin-left:8px}
+#admin a{color:var(--ink)}
+.adm-note{font-size:13px;color:var(--muted);margin:12px 0 0}
+.adm-tabs{display:flex;gap:4px;margin-top:14px;border-bottom:1px solid var(--line);overflow-x:auto}
+.adm-tab{border:0;background:none;font:inherit;font-size:14px;color:var(--muted);padding:10px 14px;border-bottom:2px solid transparent;cursor:pointer}
+.adm-tab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
+.adm-bar{display:flex;align-items:center;justify-content:space-between;margin:14px 0 10px;font-size:13px;color:var(--muted)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line)}
+#admTable{width:100%;border-collapse:collapse;font-size:13.5px}
+#admTable th{text-align:left;font-weight:500;color:var(--muted);background:var(--bg);padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+#admTable td{padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+#admTable tr.row{cursor:pointer}
+#admTable tr.row:hover,#admTable tr.row:focus-visible{background:var(--bg);outline:none}
+#admTable tr.sel{background:var(--bg);box-shadow:inset 3px 0 0 var(--ink)}
+#admTable td.empty{color:var(--muted);text-align:center;padding:28px}
+.editor{margin-top:16px;border:1px solid var(--line);padding:16px}
+.editor h3{margin:0 0 12px;font-size:15px;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
+.f input,.f select{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:8px 10px;border-radius:0}
+.f input:focus,.f select:focus{border-color:var(--ink);outline:none}
+.f input:disabled,.f select:disabled{opacity:.6}
+.ed-bar{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.btn{font:inherit;font-size:13.5px;padding:8px 14px;border:1px solid var(--ink);background:var(--ink);color:var(--panel);border-radius:0;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.danger{background:transparent;color:var(--danger);border-color:var(--danger);margin-left:auto}
+.btn:disabled{opacity:.4;cursor:default}
+.adm-msg{font-size:13px;color:var(--muted);margin:10px 0 0;min-height:1.2em}
+/* ---------- 관리자: 대화 기록 · 지침 ---------- */
+.adm-bar{gap:10px;flex-wrap:wrap}
+.adm-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto}
+.adm-tools:empty{display:none}
+.adm-tools select{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:6px 8px;border-radius:0}
+.adm-tools .btn.danger{margin-left:0}
+.btn.sm{font-size:12.5px;padding:6px 10px}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+#admTable td.clip{max-width:340px;overflow:hidden;text-overflow:ellipsis}
+.ed-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.ed-head h3{margin:0}
+.turn{border-top:1px solid var(--line);padding:14px 0}
+.ed-head+.turn{border-top:0}
+.turn-meta{font-size:12px;color:var(--muted);margin-bottom:6px}
+.turn-q,.turn-a{margin:4px 0;white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.6}
+.turn-q b,.turn-a b{display:inline-block;min-width:44px;font-weight:600;color:var(--muted);font-size:12.5px}
+.turn-a.err{color:var(--danger)}
+.turn-x{font-size:12.5px;color:var(--muted);margin:2px 0 0 44px}
+.fb{margin-top:10px;padding:10px 12px;background:var(--bg);display:flex;flex-direction:column;gap:8px}
+.fb-rate,.fb-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fb textarea,.editor textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);padding:8px 10px;resize:vertical;min-height:64px;border-radius:0;width:100%}
+.fb textarea:focus,.editor textarea:focus{border-color:var(--ink);outline:none}
+label.chk{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--ink);cursor:pointer}
+.fb-row .adm-msg{margin:0}
+.src{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+pre.preview{white-space:pre-wrap;word-break:break-word;font:12.5px/1.7 ui-monospace,Consolas,monospace;background:var(--bg);color:var(--ink);padding:12px;margin:8px 0 0;border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="app sleaze">
+  <section class="panel active" id="t4" role="tabpanel">
+    <div class="shophead">
+      <div>
+        <div class="shopname">OLD STOCK</div>
+        <div class="shopsub">빈티지 찾기 · <a class="adm-link" href="#admin">관리자 페이지</a></div>
+      </div>
+      <label class="login">로그인 고객(가상)<select id="custSel"><option value="">불러오는 중</option></select></label>
+    </div>
+    <div class="notice">AI가 올드스탁 상품 중에서 옷을 찾아 주고, 주문번호와 이름으로 주문·배송을 조회해요. 상품, 재고, 주문, 배송은 관리자 페이지에서 바꿀 수 있는 가상 데이터예요.</div>
+    <button class="reset" data-reset="t4">대화 새로 시작</button>
+    <div class="log" aria-live="polite"></div>
+    <form class="composer" onsubmit="return false"><textarea rows="1" placeholder="예: 90년대 느낌의 L 사이즈 재킷, 배송 조회"></textarea><button class="send">보내기</button></form>
+  </section>
+</div>
+
+<div id="admin">
+  <div class="adm-head">
+    <div><span class="adm-logo">OLD STOCK</span><span class="adm-sub">관리자</span></div>
+    <a class="adm-link" href="#">챗봇 화면으로</a>
+  </div>
+  <p class="adm-note" id="admNote">데이터를 불러오는 중이에요.</p>
+  <div class="adm-tabs" role="tablist">
+    <button class="adm-tab" role="tab" aria-selected="true" data-k="products">상품</button>
+    <button class="adm-tab" role="tab" aria-selected="false" data-k="inventory">재고</button>
+    <button class="adm-tab" role="tab" aria-selected="false" data-k="orders">주문</button>
+    <button class="adm-tab" role="tab" aria-selected="false" data-k="shipments">배송</button>
+    <button class="adm-tab" role="tab" aria-selected="false" data-k="logs">대화 기록</button>
+    <button class="adm-tab" role="tab" aria-selected="false" data-k="guides">지침</button>
+  </div>
+  <div class="adm-bar"><span id="admCount"></span><span class="adm-tools" id="admTools"></span><button class="btn" id="admAdd" type="button">추가</button></div>
+  <div class="tbl-wrap"><table id="admTable"></table></div>
+  <div class="editor" id="admEditor" hidden></div>
+</div>
+
+<script>
+const now=()=>new Date().toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'});
+const $=(s,r=document)=>r.querySelector(s);
+const stamp=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return '’'+String(d.getFullYear()).slice(2)+' '+p(d.getMonth()+1)+' '+p(d.getDate())+'  '+p(d.getHours())+':'+p(d.getMinutes())};
+
+/* ---------- 공통 렌더링 ---------- */
+function addMsg(log,who,text,opts={}){
+  const row=document.createElement('div');row.className='row '+(who==='user'?'user':'bot');
+  const b=document.createElement('div');b.className='bubble';b.textContent=text;
+  const sl=!!log.closest('#t4');
+  const t=document.createElement('span');t.className='time';t.textContent=now();
+  if(who==='user'){row.append(t,b)}else{
+    const a=document.createElement('div');a.className='avatar'+(who==='agent'?' agent':'');a.textContent=who==='agent'?'상':(sl?'OS':'봇');a.setAttribute('aria-hidden','true');
+    row.append(a,b,t)}
+  log.append(row);
+  if(opts.chips&&opts.chips.length){
+    const c=document.createElement('div');c.className='chips';
+    opts.chips.forEach(([label,fn])=>{const x=document.createElement('button');x.className='chip';x.type='button';x.textContent=label;
+      x.onclick=()=>{c.querySelectorAll('button').forEach(k=>k.disabled=true);fn(label)};c.append(x)});
+    log.append(c)}
+  log.scrollTop=log.scrollHeight;return b}
+function addSys(log,text){const s=document.createElement('div');s.className='sys';s.textContent=text;log.append(s);log.scrollTop=log.scrollHeight}
+function typing(log){const row=document.createElement('div');row.className='row bot';
+  row.innerHTML='<div class="avatar" aria-hidden="true">'+(log.closest('#t4')?'OS':'봇')+'</div><div class="bubble typing" aria-label="입력 중"><span></span><span></span><span></span></div>';
+  log.append(row);log.scrollTop=log.scrollHeight;return row}
+function wireComposer(panel,onSend){
+  const ta=$('textarea',panel),btn=$('.send',panel);
+  const go=()=>{const v=ta.value.trim();if(!v||btn.disabled)return;ta.value='';onSend(v)};
+  btn.onclick=go;
+  ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();go()}});
+  return {ta,btn}}
+
+/* ---------- AI 공통 ---------- */
+/* 로컬 서버(server.js)를 거쳐 Claude를 불러요. API 키는 서버의 .env에만 있어요. */
+function aiError(code,detail){const e=new Error(detail||code);e.code=code;e.detail=detail;return e}
+async function claude(payload,signal){
+  let r;
+  try{r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal})}
+  catch(e){if(e&&e.name==='AbortError')throw aiError('cancelled');throw aiError('server_down')}
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||j.error)throw aiError((j.error&&j.error.code)||'server_error',j.error&&j.error.message);
+  if(j.stop_reason==='refusal')throw aiError('refused');
+  return j}
+/* 거절 후 다른 모델로 넘어간 경우(fallback 블록), 그 뒤의 내용만 유효한 답이에요 */
+const afterFallback=content=>{const i=content.map(b=>b.type).lastIndexOf('fallback');return {i,tail:content.slice(i+1)}};
+const textOf=blocks=>blocks.filter(b=>b.type==='text').map(b=>b.text).join('').trim();
+async function askText(prompt,signal){
+  const r=await claude({messages:[{role:'user',content:prompt}]},signal);
+  const out=textOf(afterFallback(r.content||[]).tail);
+  if(!out)throw aiError('empty_completion');return out}
+/* 도구를 쓰는 대화: Claude가 도구를 부르면 브라우저에서 실행해 결과를 돌려줘요.
+   app:'oldstock'을 함께 보내면 서버가 관리자 지침을 넣고, 적용한 지침 id를 돌려줘요. */
+async function askWithTools(prompt,tools,signal,app){
+  const defs=tools.map(t=>({name:t.name,description:t.description,input_schema:t.inputSchema}));
+  const messages=[{role:'user',content:prompt}];
+  for(let i=0;i<6;i++){
+    const r=await claude({messages,tools:defs,app},signal);
+    const content=r.content||[];const {i:fb,tail}=afterFallback(content);
+    const uses=tail.filter(b=>b.type==='tool_use');
+    if(r.stop_reason!=='tool_use'||!uses.length){const out=textOf(tail);if(!out)throw aiError('empty_completion');return {text:out,guides:r.guides||[]}}
+    // 응답은 그대로 돌려보내되, 거절 전(fallback 블록 앞)의 생각·도구 호출 블록만 뺍니다
+    messages.push({role:'assistant',content:content.filter((b,k)=>!(k<fb&&['thinking','redacted_thinking','tool_use'].includes(b.type)))});
+    messages.push({role:'user',content:uses.map(u=>{const t=tools.find(x=>x.name===u.name);let res,bad=false;
+      try{res=t?t.execute(u.input||{}):{error:'없는 도구예요.'};if(!t)bad=true}catch(e){res={error:String(e&&e.message||e)};bad=true}
+      const out={type:'tool_result',tool_use_id:u.id,content:JSON.stringify(res)};if(bad)out.is_error=true;return out})})}
+  throw aiError('too_many_steps')}
+function parseJson(t){
+  const s=String(t).trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
+  try{return JSON.parse(s)}catch(_){}
+  const a=s.indexOf('{'),b=s.lastIndexOf('}');
+  if(a>=0&&b>a){try{return JSON.parse(s.slice(a,b+1))}catch(_){}}
+  throw aiError('invalid_json')}
+const ERR={
+  server_down:'서버에 연결하지 못했어요. 터미널에서 npm start로 서버를 켠 뒤 http://localhost:3000 으로 열어 주세요.',
+  no_key:'.env 파일에 ANTHROPIC_API_KEY가 비어 있어요. 키를 넣고 서버를 다시 켜 주세요.',
+  bad_key:'API 키가 올바르지 않아요. .env의 ANTHROPIC_API_KEY를 확인하고 서버를 다시 켜 주세요.',
+  bad_model:'.env의 CLAUDE_MODEL 이름을 찾을 수 없어요. 모델 이름을 확인해 주세요.',
+  api_error:'Claude API가 오류를 돌려줬어요. 잠시 뒤 다시 보내 주세요.',
+  overloaded:'Claude 서버가 바빠요. 잠시 뒤에 다시 보내 주세요.',
+  network:'서버가 Claude API에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.',
+  rate_limited:'요청이 많아요(사용 한도). 잠시 뒤에 다시 보내 주세요.',
+  invalid_json:'답변 형식이 맞지 않았어요. 한 번 더 보내 주세요.',
+  empty_completion:'빈 답변이 왔어요. 다시 보내 주세요.',
+  refused:'Claude가 이 요청에는 답하지 않았어요.',
+  too_many_steps:'조회 단계가 너무 길어졌어요. 질문을 조금 더 구체적으로 보내 주세요.',
+  cancelled:'요청이 취소됐어요.'
+};
+function showErr(log,e){
+  const code=(e&&e.code)||'unknown';
+  if(code==='cancelled')return;
+  const detail=e&&e.detail&&!ERR[code]?'\n'+e.detail:'';
+  addMsg(log,'bot',(ERR[code]||'답변을 받지 못했어요. 다시 보내 주세요.')+detail+'\n(오류 코드: '+code+')');
+  if(e&&e.detail&&ERR[code])console.warn('[AI 오류]',code,e.detail);
+  log.scrollTop=log.scrollHeight}
+
+const transcript=h=>h.map(m=>m.who+': '+m.text).join('\n');
+
+/* ---------- 데이터 저장소 (관리자와 챗봇이 함께 사용) ---------- */
+const DATA={products:{},inventory:{},orders:{},shipments:{},guidelines:{}};
+const DSTATE={db:null,status:'loading',canEdit:false};
+/* 상품·주문 데이터를 다 불러온 뒤에 챗봇이 답하도록 기다릴 때 사용 */
+let markDataReady;const dataReady=new Promise(r=>{markDataReady=r});
+const won=n=>Number(n||0).toLocaleString('ko-KR')+'원';
+let admRender=()=>{};let custRender=()=>{};
+/* 데이터는 로컬 서버의 data.json 파일에 저장돼요 */
+const store={
+  async set(k,id,obj){
+    const r=await fetch('/api/data/'+k+'/'+encodeURIComponent(id),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok)throw aiError((j.error&&j.error.code)||'http_'+r.status,j.error&&j.error.message);
+    DATA[k][id]=j.saved||obj;custRender()},
+  async remove(k,id){
+    const r=await fetch('/api/data/'+k+'/'+encodeURIComponent(id),{method:'DELETE'});
+    if(!r.ok){const j=await r.json().catch(()=>({}));throw aiError((j.error&&j.error.code)||'http_'+r.status)}
+    delete DATA[k][id];custRender()}};
+/* 서버의 최신 데이터를 다시 읽음 (다른 브라우저에서 바꾼 지침 등을 반영할 때) */
+async function refreshData(){
+  const r=await fetch('/api/data');if(!r.ok)throw aiError('http_'+r.status);
+  const d=await r.json();Object.keys(DATA).forEach(k=>{DATA[k]=(d&&d[k])||{}})}
+async function initData(){
+  try{await refreshData();DSTATE.db=store;DSTATE.canEdit=true;DSTATE.status='ready'}
+  catch(_){DSTATE.status='none'}
+  await migrateLocalGuides();
+  admRender();custRender();markDataReady();
+  try{const s=await (await fetch('/api/status')).json();
+    if(!s.hasKey&&$('.status')){$('.status').innerHTML='<span class="dot" style="background:#C2410C"></span>API 키 없음'}}
+  catch(_){if($('.status'))$('.status').innerHTML='<span class="dot" style="background:#C2410C"></span>서버 꺼짐'}}
+function available(){
+  return Object.entries(DATA.products)
+    .filter(([id,p])=>p&&p.status==='판매중'&&Number((DATA.inventory[id]||{}).qty)>0)
+    .map(([id,p])=>Object.assign({id},p))}
+
+/* ---------- 대화 기록 (이 브라우저의 localStorage) · 관리자 지침 (서버 data.json) ---------- */
+const LS_CONV='oldstock.conversations.v1',LS_GUIDE='oldstock.guidelines.v1';   // LS_GUIDE: 예전 버전의 지침 (서버로 옮긴 뒤 지움)
+const MAX_CONV=300,MAX_GUIDE_ACTIVE=20,MAX_GUIDE_LEN=300;
+const lsRead=k=>{try{const v=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(v)?v:[]}catch(_){return []}};
+const lsWrite=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(_){return false}};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const fmtTime=iso=>{const d=new Date(iso);if(isNaN(d))return '-';const p=n=>String(n).padStart(2,'0');return `${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`};
+const LOG={
+  all:()=>lsRead(LS_CONV),
+  /* 저장 공간이 모자라면 오래된 대화부터 지워 가며 다시 저장 */
+  save(list){list=list.slice(-MAX_CONV);while(!lsWrite(LS_CONV,list)){if(list.length<=1)return false;list=list.slice(Math.ceil(list.length/10))}return true},
+  addTurn(convId,turn){const list=LOG.all();let c=list.find(x=>x.id===convId);
+    if(!c){c={id:convId,startedAt:turn.at,turns:[]};list.push(c)}
+    c.updatedAt=turn.at;c.turns.push(turn);return LOG.save(list)},
+  setFeedback(convId,turnId,fb){const list=LOG.all();const c=list.find(x=>x.id===convId);const t=c&&c.turns.find(x=>x.id===turnId);
+    if(!t)return false;t.feedback=fb;return LOG.save(list)},
+  clear(){try{localStorage.removeItem(LS_CONV)}catch(_){}}};
+/* 관리자 지침은 서버(data.json의 guidelines)에 저장되고, 챗봇 요청마다 서버가 사용 중인 지침을 넣어요 */
+const byTime=(a,b)=>String(a.updatedAt||a.createdAt||'').localeCompare(String(b.updatedAt||b.createdAt||''));
+const GUIDE={
+  all:()=>Object.entries(DATA.guidelines||{}).map(([id,g])=>Object.assign({id},g)).sort(byTime),
+  get:id=>id&&DATA.guidelines[id]?Object.assign({id},DATA.guidelines[id]):null,
+  async put(g){const {id,...rest}=g;await store.set('guidelines',id,rest);return GUIDE.get(id)},
+  remove:id=>store.remove('guidelines',id),
+  async preview(){const r=await fetch('/api/guidelines/active');if(!r.ok)throw aiError('http_'+r.status);return r.json()}};
+/* 예전 버전에서 브라우저에 저장해 둔 지침이 있으면 서버로 한 번 옮김 */
+async function migrateLocalGuides(){
+  const old=lsRead(LS_GUIDE);if(!old.length||DSTATE.status!=='ready')return;
+  try{for(const g of old){if(g&&g.id&&g.text&&!DATA.guidelines[g.id])await GUIDE.put(g)}localStorage.removeItem(LS_GUIDE)}catch(_){}}
+
+/* ---------- 탭 4: 빈티지 찾기 · 주문 조회 ---------- */
+(function finderTab(){
+  const panel=$('#t4'),log=$('.log',panel);let history=[];let ctrl=null;const verified=new Set();
+  const {ta,btn}=wireComposer(panel,send);
+  const sel=$('#custSel');let me='';let touched=false;
+  function customers(){const m={};Object.values(DATA.orders).forEach(o=>{if(o&&o.customerId)m[o.customerId]=o.customer||o.customerId});
+    return Object.entries(m).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0)}
+  const meName=()=>{const c=customers().find(([id])=>id===me);return c?c[1]:''};
+  custRender=()=>{const list=customers();const prev=me;sel.innerHTML='';
+    const none=document.createElement('option');none.value='';none.textContent='비로그인';sel.append(none);
+    list.forEach(([id,n])=>{const op=document.createElement('option');op.value=id;op.textContent=`${n} (${id})`;sel.append(op)});
+    me=list.some(([id])=>id===prev)?prev:(touched||!list.length?'':list[0][0]);sel.value=me};
+  sel.onchange=()=>{touched=true;me=sel.value;verified.clear();
+    addSys(log,me?`${meName()} 님으로 로그인한 상태예요`:'로그아웃했어요. 주문 조회에는 주문번호와 이름이 필요해요')};
+  function myOrders(){
+    if(!me)return {loggedIn:false,message:'로그인하지 않은 상태입니다. 주문번호와 주문자 이름으로 조회하세요.'};
+    const list=Object.entries(DATA.orders).filter(([,o])=>o&&o.customerId===me)
+      .sort((a,b)=>String(b[1].date||'').localeCompare(String(a[1].date||'')))
+      .map(([no,o])=>{verified.add(no);const s=DATA.shipments[no];
+        return {orderNo:no,date:o.date,itemName:o.itemName,amount:o.amount,status:o.status,
+          shipment:s?{courier:s.courier,tracking:s.tracking,status:s.status,location:s.location,updated:s.updated,eta:s.eta}:null}});
+    return {loggedIn:true,customer:meName(),orders:list}}
+  const TOOL_MY={name:'get_my_orders',description:'로그인한 고객 본인의 주문 내역과 배송 상태를 최신순으로 모두 가져옵니다. 입력값은 없습니다.',
+    inputSchema:{type:'object',properties:{}},execute:myOrders};  const starters=['90년대 느낌의 재킷','5만 원 이하 가을 옷','내 주문 배송 조회','70년대 스타일로 한 벌'];
+  function chips(list){if(!list.length)return;const c=document.createElement('div');c.className='chips';
+    list.forEach(s=>{const x=document.createElement('button');x.type='button';x.className='chip';x.textContent=s;
+      x.onclick=()=>{c.querySelectorAll('button').forEach(k=>k.disabled=true);send(s)};c.append(x)});
+    log.append(c);log.scrollTop=log.scrollHeight}
+  function cards(list){if(!list.length)return;const w=document.createElement('div');w.className='pcards';
+    list.forEach(p=>{const c=document.createElement('div');c.className='pcard';
+      const th=document.createElement('div');th.className='pthumb';th.style.background=/^#[0-9A-Fa-f]{6}$/.test(p.hex||'')?p.hex:'#9A9A9A';
+      const cat=document.createElement('span');cat.className='pcat';cat.textContent=p.cat||'';th.append(cat);
+      const b=document.createElement('div');b.className='pbrand';b.textContent='OLD STOCK';
+      const n=document.createElement('div');n.className='pname';n.textContent=p.name||'';
+      const pr=document.createElement('div');pr.className='pprice';pr.textContent=won(p.price);
+      const co=document.createElement('div');co.className='pcolor';co.textContent=`${p.era||''} / ${p.size||''} / 상태 ${p.cond||'-'}급`;
+      c.append(th,b,n,pr,co);w.append(c)});
+    log.append(w);log.scrollTop=log.scrollHeight}
+  function orderCard(no){const o=DATA.orders[no];if(!o)return;const s=DATA.shipments[no]||{};
+    const box=document.createElement('div');box.className='trk';const dl=document.createElement('dl');
+    [['주문번호',no],['상품',o.itemName],['결제금액',won(o.amount)],['주문 상태',o.status],['택배사',s.courier],['송장번호',s.tracking],['배송 상태',s.status],['현재 위치',s.location],['최근 업데이트',s.updated],['도착 예정',s.eta]]
+      .forEach(([k,v])=>{const dt=document.createElement('dt');dt.textContent=k;const dd=document.createElement('dd');dd.textContent=v||'-';dl.append(dt,dd)});
+    box.append(dl);log.append(box);log.scrollTop=log.scrollHeight}
+  const norm=v=>String(v||'').replace(/[\s-]/g,'').toUpperCase();
+  function lookup(input){
+    const no=norm(input&&input.order_no),name=String((input&&input.name)||'').replace(/\s/g,'');
+    const o=DATA.orders[no];
+    if(!o||String(o.customer||'').replace(/\s/g,'')!==name)return {found:false,message:'주문번호와 주문자 이름이 일치하는 주문이 없습니다.'};
+    verified.add(no);const s=DATA.shipments[no];
+    return {found:true,order:{orderNo:no,date:o.date,itemName:o.itemName,amount:o.amount,pay:o.pay,status:o.status},
+      shipment:s?{courier:s.courier,tracking:s.tracking,status:s.status,location:s.location,updated:s.updated,eta:s.eta}:null}}
+  const TOOL={name:'lookup_order',description:'주문번호와 주문자 이름으로 주문 내역과 배송 상태를 조회합니다. 고객이 말한 값만 그대로 넣으세요.',
+    inputSchema:{type:'object',properties:{order_no:{type:'string',description:'주문번호'},name:{type:'string',description:'주문자 이름'}},required:['order_no','name']},
+    execute:lookup};
+  let convId=null;   // 대화 기록용 id: '대화 새로 시작'마다 새로 만듦
+  function start(){log.innerHTML='';history=[];verified.clear();convId=null;
+    addMsg(log,'bot','어서 오세요, 올드스탁이에요.\n찾는 옷을 편하게 말해 주세요. 연대, 사이즈, 가격대, 분위기 뭐든 좋아요.\n주문·배송은 로그인한 상태면 바로, 아니면 주문번호와 이름으로 조회해 드려요.');chips(starters)}
+  function prompt(items){
+    const cat=items.map(p=>`${p.id} | ${p.name} | ${p.line||'-'} | ${p.cat} | ${p.price}원 | ${p.era} | ${p.size} | 실측 ${p.measure||'-'} | ${p.cond} | 하자 ${p.defect||'없음'} | ${p.color||'-'} | ${p.tags||''}`).join('\n')||'(현재 판매 중인 상품 없음)';
+    return `당신은 빈티지 의류 쇼핑몰 올드스탁(OLD STOCK)의 쇼핑 도우미입니다. 고객이 원하는 옷을 찾아 주고, 주문·배송을 조회해 줍니다.
+
+[판매 중인 상품] id | 이름 | 라인 | 분류 | 가격 | 연대 | 사이즈 | 실측 | 상태 | 하자 | 색 | 태그
+${cat}
+
+[상태 등급] A: 사용감 거의 없음, B: 약간의 사용감, C: 눈에 띄는 사용감이 있지만 희소한 상품
+
+[옷 찾기 규칙]
+- 위 목록의 상품만 추천하고, 없는 상품·가격·사이즈·상태는 지어내지 마세요.
+- 빈티지 상품은 모두 한 점뿐이고 표기된 사이즈 하나만 있습니다. 재입고나 다른 사이즈를 약속하지 마세요.
+- 가격·사이즈·연대·상태 조건은 반드시 지키세요. 딱 맞는 상품이 없으면 없다고 말하고 가장 가까운 상품을 제안하세요.
+- 하자가 있는 상품을 추천할 때는 하자를 함께 알려 주세요.
+
+[로그인 상태]
+${me?`${meName()} 님(고객 ID ${me})으로 로그인한 상태입니다.`:'로그인하지 않은 상태입니다.'}
+
+[주문·배송 조회 규칙]
+- 로그인한 상태면 주문번호나 이름을 묻지 말고 바로 get_my_orders를 불러 본인 주문을 조회하세요. 주문이 여러 건이면 질문에 맞는 주문을 고르고, 특정하기 어려우면 배송 중이거나 가장 최근 주문을 중심으로 짧게 요약하세요.
+- 로그인하지 않은 상태면 주문번호와 주문자 이름이 모두 필요합니다. 둘 중 하나라도 없으면 먼저 요청하고 lookup_order를 부르지 마세요.
+- 고객이 말한 값 그대로 lookup_order를 부르세요. 주문 정보는 도구 결과로만 답하고 추측하지 마세요.
+- 도구 결과가 found:false면 일치하는 주문이 없다고 안내하고 번호와 이름을 다시 확인해 달라고 하세요.
+- 취소·교환·환불 처리는 이 채팅에서 할 수 없으니 상담원 확인이 필요하다고 안내하세요.
+
+[공통]
+- 옷 찾기나 주문 조회와 관계없는 질문이면 이 두 가지만 도울 수 있다고 한 문장으로 안내하세요.
+- 말투는 차분하고 친절한 해요체.
+
+[지금까지의 대화]
+${transcript(history)}
+
+마지막 고객 메시지에 답하세요. 필요하면 도구를 쓴 뒤, 다른 말 없이 아래 형식의 JSON만 출력하세요.
+{"message": "답변 1~3문장", "ids": ["추천 상품 id, 최대 4개, 없으면 빈 목록"], "order_nos": ["조회에 성공해 카드로 보여줄 주문번호, 질문과 관련된 것만 최대 3개, 없으면 빈 목록"], "followups": ["고객이 이어서 누를 짧은 요청, 최대 3개"]}`}
+  async function send(v){
+    addMsg(log,'user',v);history.push({who:'고객',text:v});
+    btn.disabled=true;const ty=typing(log);
+    await dataReady;   // 페이지를 연 직후 보내도 상품 목록이 빈 채로 답하지 않게
+    const items=available();const byId=Object.fromEntries(items.map(p=>[p.id,p]));
+    if(!convId)convId=uid();const cid=convId;const t0=performance.now();
+    const turn={id:uid(),at:new Date().toISOString(),customerId:me,customerName:meName(),user:v,guides:[]};
+    ctrl=new AbortController();const my=ctrl;
+    try{
+      // 관리자 지침은 서버가 넣어 주고, 실제로 적용한 지침 id를 돌려줘요
+      const res=await askWithTools(prompt(items),[TOOL,TOOL_MY],my.signal,'oldstock');
+      turn.guides=res.guides;const r=parseJson(res.text);
+      if(my!==ctrl)return;
+      ty.remove();
+      const msg=String((r&&r.message)||'조건에 맞는 결과를 찾지 못했어요.');
+      const ids=[...new Set(((r&&r.ids)||[]).map(String).filter(id=>byId[id]))].slice(0,4);
+      const raw=r&&Array.isArray(r.order_nos)?r.order_nos:(r&&r.order_no?[r.order_no]:[]);
+      const nos=[...new Set(raw.map(norm))].filter(n=>n&&verified.has(n)).slice(0,3);
+      const fups=((r&&r.followups)||[]).map(String).slice(0,3);
+      addMsg(log,'bot',msg);cards(ids.map(i=>byId[i]));nos.forEach(orderCard);chips(fups);
+      history.push({who:'도우미',text:msg+(ids.length?' (보여준 상품: '+ids.map(i=>byId[i].name).join(', ')+')':'')+(nos.length?' (주문 '+nos.join(', ')+' 조회 결과를 보여줌)':'')});
+      LOG.addTurn(cid,Object.assign(turn,{bot:msg,products:ids.map(i=>({id:i,name:byId[i].name,price:byId[i].price})),orders:nos,followups:fups,ms:Math.round(performance.now()-t0)}));
+    }catch(e){ty.remove();if(my===ctrl){showErr(log,e);
+      if(!e||e.code!=='cancelled')LOG.addTurn(cid,Object.assign(turn,{bot:'',error:(e&&e.code)||'unknown',ms:Math.round(performance.now()-t0)}))}}
+    finally{btn.disabled=false;ta.focus()}}
+  $('[data-reset]',panel).onclick=()=>{if(ctrl)ctrl.abort();ctrl=null;start()};
+  start();
+})();
+
+/* ---------- 관리자 페이지 (#admin) ---------- */
+const SCHEMA={
+  products:{label:'상품',key:'code',cols:['code','name','cat','price','size','cond','status'],fields:[
+    ['code','상품코드','text'],['name','상품명','text'],['line','라인','select',['아메리칸','재패니즈','유러피안']],
+    ['cat','분류','select',['상의','하의','아우터','원피스','액세서리']],['price','가격(원)','number'],
+    ['era','연대','select',['60년대','70년대','80년대','90년대','00년대']],['size','사이즈','text'],['measure','실측(cm)','text'],
+    ['cond','상태 등급','select',['A','B','C']],['defect','오염·하자','text'],['color','색상','text'],['hex','썸네일 색','text'],
+    ['tags','검색 태그','text'],['status','판매 상태','select',['판매중','예약중','판매완료','숨김']]]},
+  inventory:{label:'재고',key:'code',cols:['code','qty','location','inDate','inspect','memo'],fields:[
+    ['code','상품코드','text'],['qty','수량','number'],['location','보관 위치','text'],['inDate','입고일','date'],
+    ['inspect','검수','select',['검수중','검수완료']],['memo','메모','text']]},
+  orders:{label:'주문',key:'orderNo',cols:['orderNo','date','customerId','customer','itemName','amount','status'],fields:[
+    ['orderNo','주문번호','text'],['date','주문일','date'],['customerId','고객 ID','text'],['customer','주문자','text'],['itemCode','상품코드','text'],
+    ['itemName','상품명','text'],['amount','결제금액(원)','number'],['pay','결제수단','select',['카드','계좌이체','간편결제']],
+    ['status','주문 상태','select',['결제완료','배송준비','배송중','배송완료','주문취소','반품회수중','반품완료']]]},
+  shipments:{label:'배송',key:'orderNo',cols:['orderNo','courier','tracking','status','location','eta'],fields:[
+    ['orderNo','주문번호','text'],['courier','택배사','select',['CJ대한통운','우체국택배','롯데택배','한진택배']],['tracking','송장번호','text'],
+    ['status','배송 상태','select',['집하대기','배송중','배송완료','반품회수중','회수완료']],['location','현재 위치','text'],
+    ['updated','최근 업데이트','text'],['eta','도착 예정일','date']]}
+};
+(function admin(){
+  let cur='products',sel=null,isNew=false,saving=false;
+  let logFilter='all',selConv=null,selGuide=null;   // 대화 기록·지침 탭 상태
+  const tbl=$('#admTable'),ed=$('#admEditor'),note=$('#admNote'),cnt=$('#admCount'),add=$('#admAdd'),tools=$('#admTools');
+  const label=(k,f)=>{const x=SCHEMA[k].fields.find(z=>z[0]===f);return x?x[1]:f};
+  const fmt=(f,v)=>v==null||v===''?'-':(f==='price'||f==='amount')?won(v):String(v);
+  function selectTab(k){
+    cur=k;sel=null;isNew=false;selConv=null;selGuide=null;ed.hidden=true;
+    document.querySelectorAll('.adm-tab').forEach(x=>x.setAttribute('aria-selected',x.dataset.k===k))}
+  document.querySelectorAll('.adm-tab').forEach(b=>b.onclick=()=>{selectTab(b.dataset.k);draw()});
+  add.onclick=()=>{
+    if(cur==='guides'){selGuide=null;openGuide(null);draw();return}
+    sel=null;isNew=true;openEditor({});draw()};
+  /* 다른 탭(챗봇 화면)에서 대화가 쌓이거나 지침이 바뀌면 목록을 새로 그림 */
+  window.addEventListener('storage',e=>{if((e.key===LS_CONV||e.key===null)&&cur==='logs')draw()});
+  /* 지침은 서버에 있으므로, 지침 탭을 열 때마다 서버의 최신 목록을 다시 읽음 */
+  document.querySelector('.adm-tab[data-k="guides"]').addEventListener('click',()=>{refreshData().then(()=>{if(cur==='guides')draw()}).catch(()=>{})});
+  function draw(){
+    if(!document.body.classList.contains('admin-mode'))return;
+    tools.innerHTML='';add.hidden=false;
+    if(cur==='logs'||cur==='guides'){
+      note.textContent=cur==='logs'
+        ?'대화 기록은 이 브라우저(localStorage)에만 저장돼요. 같은 브라우저·같은 주소에서 나눈 대화만 보여요.'
+        :'지침은 서버(data.json)에 저장돼요. 어느 브라우저에서 질문해도 사용 중인 지침이 챗봇 답변에 반영돼요.';
+      return cur==='logs'?drawLogs():drawGuides()}
+    const S=SCHEMA[cur];const st=DSTATE.status;
+    note.textContent=st==='none'?'서버에 연결할 수 없어요. 터미널에서 npm start로 서버를 켠 뒤 http://localhost:3000/#admin 으로 열어 주세요.'
+      :st==='error'?'데이터를 불러오지 못했어요. 페이지를 새로고침해 주세요.'
+      :st==='slow'?'연결이 느려서 데이터가 최신이 아닐 수 있어요.'
+      :st==='loading'?'데이터를 불러오는 중이에요.'
+      :DSTATE.canEdit?'저장하면 챗봇에 바로 반영돼요. 데이터는 프로젝트 폴더의 data.json에 저장돼요.':'보기 전용이에요. 편집 권한이 있는 사람만 수정할 수 있어요.';
+    add.disabled=!DSTATE.canEdit||!DSTATE.db;
+    const rows=Object.entries(DATA[cur]).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);
+    cnt.textContent=`${S.label} ${rows.length}건`;
+    tbl.innerHTML='';
+    const hr=tbl.createTHead().insertRow();
+    S.cols.forEach(c=>{const th=document.createElement('th');th.textContent=label(cur,c);hr.append(th)});
+    const tb=tbl.createTBody();
+    if(!rows.length){const td=tb.insertRow().insertCell();td.colSpan=S.cols.length;td.className='empty';
+      td.textContent=st==='ready'?'데이터가 없어요. 추가 버튼으로 등록하세요.':st==='none'?'표시할 데이터가 없어요.':'불러오는 중이에요.'}
+    rows.forEach(([id,d])=>{const tr=tb.insertRow();tr.className='row'+(id===sel?' sel':'');tr.tabIndex=0;
+      S.cols.forEach(c=>{tr.insertCell().textContent=fmt(c,c===S.key?id:d[c])});
+      const open=()=>{sel=id;isNew=false;openEditor(Object.assign({},d,{[S.key]:id}));draw()};
+      tr.onclick=open;tr.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();open()}}})}
+  function mk(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+  function openEditor(d){
+    const k=cur,S=SCHEMA[k];ed.hidden=false;ed.innerHTML='';let delArm=false;
+    ed.append(mk('h3',null,isNew?`${S.label} 추가`:`${S.label} 수정`));
+    const g=mk('div','grid'),inputs={};
+    S.fields.forEach(([f,lab,type,opts])=>{
+      const l=mk('label','f');l.append(mk('span',null,lab));let el;
+      if(type==='select'){el=document.createElement('select');
+        const list=opts.slice();if(d[f]!=null&&d[f]!==''&&!list.includes(String(d[f])))list.push(String(d[f]));
+        list.forEach(o=>{const op=document.createElement('option');op.value=o;op.textContent=o;el.append(op)})}
+      else{el=document.createElement('input');el.type=type==='number'?'number':type==='date'?'date':'text';if(type==='number')el.min='0'}
+      el.value=d[f]!=null?d[f]:(type==='select'?opts[0]:'');
+      if(f===S.key){el.disabled=!isNew;el.placeholder=k==='orders'||k==='shipments'?'예: OS261116011':'예: P11'}
+      if(f==='hex')el.placeholder='#8A5A2B';
+      if(!DSTATE.canEdit)el.disabled=true;
+      inputs[f]=el;l.append(el);g.append(l)});
+    ed.append(g);
+    const bar=mk('div','ed-bar'),msg=mk('p','adm-msg');
+    const save=mk('button','btn',isNew?'추가':'저장'),close=mk('button','btn ghost','닫기'),del=mk('button','btn danger','삭제');
+    [save,close,del].forEach(b=>b.type='button');del.hidden=isNew;
+    save.disabled=del.disabled=!DSTATE.canEdit||!DSTATE.db;
+    save.onclick=async()=>{
+      if(saving)return;
+      const key=String(inputs[S.key].value).trim();
+      if(!/^[A-Za-z0-9_-]{1,60}$/.test(key)){msg.textContent=`${label(k,S.key)}는 영문, 숫자, -, _만 쓸 수 있어요.`;inputs[S.key].focus();return}
+      if(isNew&&DATA[k][key]){msg.textContent=`이미 있는 ${label(k,S.key)}예요. 다른 값을 입력하세요.`;inputs[S.key].focus();return}
+      const obj={};
+      for(const [f,lab,type] of S.fields){if(f===S.key)continue;const v=inputs[f].value;
+        if(type==='number'){const n=v===''?0:Number(v);if(!Number.isFinite(n)||n<0){msg.textContent=`${lab}에 0 이상의 숫자를 입력하세요.`;inputs[f].focus();return}obj[f]=n}
+        else obj[f]=String(v).trim()}
+      if(obj.hex&&!/^#[0-9A-Fa-f]{6}$/.test(obj.hex)){msg.textContent='썸네일 색은 #8A5A2B 형식으로 입력하세요.';inputs.hex.focus();return}
+      const wasNew=isNew;saving=true;save.disabled=true;msg.textContent='저장하는 중이에요.';
+      try{await DSTATE.db.set(k,key,obj);
+        msg.textContent=wasNew?'추가했어요. 챗봇에 바로 반영돼요.':'저장했어요. 챗봇에 바로 반영돼요.';
+        sel=key;isNew=false;inputs[S.key].disabled=true;del.hidden=false;save.textContent='저장';draw()}
+      catch(e){msg.textContent='저장하지 못했어요. 편집 권한과 연결을 확인한 뒤 다시 시도하세요. ('+((e&&e.code)||'error')+')'}
+      finally{saving=false;save.disabled=!DSTATE.canEdit}};
+    del.onclick=async()=>{
+      if(!delArm){delArm=true;del.textContent='한 번 더 누르면 삭제';return}
+      del.disabled=true;msg.textContent='삭제하는 중이에요.';
+      try{await DSTATE.db.remove(k,sel);ed.hidden=true;sel=null;draw()}
+      catch(e){msg.textContent='삭제하지 못했어요. ('+((e&&e.code)||'error')+')';del.disabled=false}};
+    close.onclick=()=>{ed.hidden=true;sel=null;isNew=false;draw()};
+    bar.append(save,close,del);ed.append(bar,msg)}
+
+  /* ---------- 대화 기록 탭 ---------- */
+  const rateOf=t=>t.error?'error':(t.feedback&&t.feedback.rating)||'none';
+  const custOf=t=>t.customerName?`${t.customerName} (${t.customerId})`:'비로그인';
+  function btnSm(text,cls='btn ghost sm'){const b=mk('button',cls,text);b.type='button';return b}
+  function table(heads,rows,emptyText){
+    tbl.innerHTML='';const hr=tbl.createTHead().insertRow();heads.forEach(h=>hr.append(mk('th',null,h)));
+    const tb=tbl.createTBody();
+    if(!rows.length){const td=tb.insertRow().insertCell();td.colSpan=heads.length;td.className='empty';td.textContent=emptyText}
+    rows.forEach(({cells,selected,open})=>{const tr=tb.insertRow();tr.className='row'+(selected?' sel':'');tr.tabIndex=0;
+      cells.forEach(([text,cls])=>{const td=tr.insertCell();td.textContent=text;if(cls){td.className=cls;td.title=text}});
+      tr.onclick=open;tr.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();open()}}})}
+  function drawLogs(){
+    add.hidden=true;
+    const convs=LOG.all().slice().reverse();
+    const turns=convs.flatMap(c=>c.turns||[]);
+    const n={none:0,good:0,bad:0,error:0};turns.forEach(t=>n[rateOf(t)]++);
+    cnt.textContent=`대화 ${convs.length}건 · 답변 ${turns.length}개 · 피드백 대기 ${n.none}개`;
+    const fs=mk('select');fs.setAttribute('aria-label','피드백 상태로 거르기');
+    [['all','전체'],['none',`피드백 대기 (${n.none})`],['bad',`개선 필요 (${n.bad})`],['good',`좋음 (${n.good})`],['error',`오류 (${n.error})`]]
+      .forEach(([v,l])=>{const o=mk('option',null,l);o.value=v;fs.append(o)});
+    fs.value=logFilter;fs.onchange=()=>{logFilter=fs.value;draw()};
+    const ex=btnSm('내보내기');ex.onclick=exportAll;
+    const cl=btnSm('기록 비우기','btn danger sm');cl.disabled=!convs.length;let arm=false;
+    cl.onclick=()=>{if(!arm){arm=true;cl.textContent='한 번 더 누르면 비워져요';return}LOG.clear();selConv=null;ed.hidden=true;draw()};
+    tools.append(fs,ex,cl);
+    if(selConv&&!convs.some(c=>c.id===selConv)){selConv=null;ed.hidden=true}
+    const list=convs.filter(c=>logFilter==='all'||(c.turns||[]).some(t=>rateOf(t)===logFilter));
+    table(['시작','고객','질문 수','마지막 질문','피드백'],list.map(c=>{
+      const ts=c.turns||[],last=ts[ts.length-1]||{};const k={good:0,bad:0,none:0,error:0};ts.forEach(t=>k[rateOf(t)]++);
+      return {selected:c.id===selConv,open:()=>{selConv=c.id;openConv(c.id);draw()},
+        cells:[[fmtTime(c.startedAt)],[[...new Set(ts.map(custOf))].join(', ')||'-'],[String(ts.length)],[last.user||'-','clip'],
+          [[k.good&&`좋음 ${k.good}`,k.bad&&`개선 ${k.bad}`,k.none&&`대기 ${k.none}`,k.error&&`오류 ${k.error}`].filter(Boolean).join(' · ')||'-']]}}),
+      convs.length?'조건에 맞는 대화가 없어요.':'아직 저장된 대화가 없어요. 챗봇 화면에서 대화하면 여기에 쌓여요.')}
+  function openConv(id){
+    const c=LOG.all().find(x=>x.id===id);if(!c){ed.hidden=true;return}
+    ed.hidden=false;ed.innerHTML='';
+    const head=mk('div','ed-head'),close=btnSm('닫기');close.onclick=()=>{selConv=null;ed.hidden=true;draw()};
+    head.append(mk('h3',null,`대화 상세 · ${fmtTime(c.startedAt)} 시작 · 질문 ${c.turns.length}개`),close);ed.append(head);
+    c.turns.forEach((t,i)=>ed.append(turnView(c.id,t,i)))}
+  function turnView(cid,t,i){
+    const w=mk('div','turn');
+    w.append(mk('div','turn-meta',[`#${i+1}`,fmtTime(t.at),custOf(t),t.ms!=null?`${(t.ms/1000).toFixed(1)}초`:'',
+      t.guides&&t.guides.length?`지침 ${t.guides.length}개 적용`:'지침 없이 답변'].filter(Boolean).join(' · ')));
+    const q=mk('p','turn-q');q.append(mk('b',null,'고객'),document.createTextNode(t.user||''));
+    const a=mk('p','turn-a'+(t.error?' err':''));a.append(mk('b',null,'챗봇'),document.createTextNode(t.error?`(답변 실패 · 오류 코드 ${t.error})`:(t.bot||'')));
+    w.append(q,a);
+    if(t.products&&t.products.length)w.append(mk('p','turn-x','추천 상품: '+t.products.map(p=>`${p.name} (${p.id}, ${won(p.price)})`).join(', ')));
+    if(t.orders&&t.orders.length)w.append(mk('p','turn-x','보여준 주문: '+t.orders.join(', ')));
+    if(t.error)return w;
+    // 피드백 입력
+    const fb=t.feedback||{};let rating=fb.rating||'';
+    const box=mk('div','fb'),rb=mk('div','fb-rate');
+    const good=btnSm('좋음'),bad=btnSm('개선 필요');
+    const paint=()=>{good.setAttribute('aria-pressed',rating==='good');bad.setAttribute('aria-pressed',rating==='bad')};
+    good.onclick=()=>{rating=rating==='good'?'':'good';paint()};bad.onclick=()=>{rating=rating==='bad'?'':'bad';paint()};paint();
+    rb.append(good,bad);
+    const ta=mk('textarea');ta.rows=2;ta.maxLength=MAX_GUIDE_LEN;ta.value=fb.comment||'';ta.setAttribute('aria-label',`#${i+1} 답변 피드백`);
+    ta.placeholder='예: 하자가 있는 상품은 첫 문장에서 하자를 먼저 알려 주세요.';
+    const linked=GUIDE.get(fb.guideId);
+    const chkL=mk('label','chk'),chk=mk('input');chk.type='checkbox';chk.checked=!!(linked&&linked.active);
+    chkL.append(chk,document.createTextNode('다음 답변부터 챗봇 지침으로 반영'));
+    const row=mk('div','fb-row'),save=btnSm('피드백 저장','btn sm'),msg=mk('span','adm-msg');
+    row.append(chkL,save,msg);
+    save.onclick=async()=>{
+      const comment=ta.value.trim();
+      if(!rating&&!comment){msg.textContent='좋음/개선 필요를 고르거나 피드백을 입력하세요.';return}
+      if(chk.checked&&!comment){msg.textContent='지침으로 반영하려면 피드백 내용을 입력하세요.';ta.focus();return}
+      save.disabled=true;msg.textContent='저장하는 중이에요.';
+      try{
+        // 지침은 서버에 저장: 체크하면 만들거나 고치고, 체크를 풀면 끔
+        let guideId=fb.guideId||null;const g=GUIDE.get(guideId);
+        if(chk.checked){
+          const ng=g?Object.assign(g,{text:comment,active:true})
+            :{id:uid(),text:comment,active:true,source:{convId:cid,turnId:t.id,question:t.user,answer:t.bot}};
+          guideId=(await GUIDE.put(ng)).id}
+        else if(g&&g.active){await GUIDE.put(Object.assign(g,{active:false}))}
+        const nf={rating,comment,guideId,at:new Date().toISOString()};
+        if(!LOG.setFeedback(cid,t.id,nf)){msg.textContent='피드백을 저장하지 못했어요. 기록이 지워졌는지 확인해 주세요.';return}
+        Object.assign(fb,nf);t.feedback=nf;
+        msg.textContent=chk.checked?'저장했어요. 다음 답변부터 지침으로 반영돼요.':'저장했어요.';draw()}
+      catch(e){msg.textContent=`지침을 서버에 저장하지 못했어요. 서버가 켜져 있는지 확인해 주세요. (${(e&&e.code)||'error'})`}
+      finally{save.disabled=false}};
+    box.append(rb,ta,row);w.append(box);return w}
+  function exportAll(){
+    const data={exportedAt:new Date().toISOString(),conversations:LOG.all(),guidelines:GUIDE.all()};
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+    a.download=`oldstock-대화기록-${new Date().toISOString().slice(0,10)}.json`;document.body.append(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+
+  /* ---------- 지침 탭 ---------- */
+  function drawGuides(){
+    add.disabled=false;
+    const gl=GUIDE.all().slice().reverse();const act=gl.filter(g=>g.active&&String(g.text||'').trim()).length;
+    cnt.textContent=`지침 ${gl.length}개 · 사용 중 ${act}개`+(act>MAX_GUIDE_ACTIVE?` (가장 최근 ${MAX_GUIDE_ACTIVE}개만 챗봇에 반영)`:'');
+    const pv=btnSm('챗봇에 전달되는 내용 보기');pv.onclick=()=>{selGuide=null;showPreview();draw()};tools.append(pv);
+    if(selGuide&&!gl.some(g=>g.id===selGuide)){selGuide=null;ed.hidden=true}
+    table(['상태','지침','계기가 된 고객 질문','수정'],gl.map(g=>({selected:g.id===selGuide,open:()=>{selGuide=g.id;openGuide(g.id);draw()},
+      cells:[[g.active?'사용 중':'꺼짐'],[g.text||'-','clip'],[(g.source&&g.source.question)||'직접 추가','clip'],[fmtTime(g.updatedAt||g.createdAt)]]})),
+      '아직 지침이 없어요. 대화 기록 탭에서 답변에 피드백을 남기거나, 추가 버튼으로 직접 만드세요.')}
+  function openGuide(id){
+    const g=id?GUIDE.get(id):null;
+    ed.hidden=false;ed.innerHTML='';
+    const head=mk('div','ed-head');head.append(mk('h3',null,g?'지침 수정':'지침 추가'));ed.append(head);
+    const ta=mk('textarea');ta.rows=3;ta.maxLength=MAX_GUIDE_LEN;ta.value=g?g.text||'':'';ta.setAttribute('aria-label','지침 내용');
+    ta.placeholder='챗봇이 앞으로 지킬 내용을 한 문장으로 써 주세요. 예: 추천할 때는 실측 사이즈를 함께 알려 주세요.';
+    const chkL=mk('label','chk'),chk=mk('input');chk.type='checkbox';chk.checked=g?!!g.active:true;
+    chkL.append(chk,document.createTextNode('챗봇에 반영 (사용 중)'));
+    ed.append(ta);
+    if(g&&g.source&&g.source.question){
+      const s=mk('p','src',`계기가 된 대화 — 고객: "${g.source.question}"`+(g.source.answer?` / 당시 답변: "${String(g.source.answer).slice(0,120)}"`:''));
+      const go=btnSm('대화 보기');go.style.marginLeft='8px';
+      go.onclick=()=>{const cv=g.source.convId;selectTab('logs');selConv=cv;openConv(cv);draw()};
+      s.append(go);ed.append(s)}
+    const bar=mk('div','ed-bar'),msg=mk('p','adm-msg');
+    const save=mk('button','btn',g?'저장':'추가'),close=btnSm('닫기','btn ghost'),del=btnSm('삭제','btn danger');
+    save.type='button';del.hidden=!g;let arm=false;
+    const fail=e=>{msg.textContent=`서버에 저장하지 못했어요. 서버가 켜져 있는지 확인해 주세요. (${(e&&e.code)||'error'})`};
+    save.onclick=async()=>{
+      const text=ta.value.trim();if(!text){msg.textContent='지침 내용을 입력하세요.';ta.focus();return}
+      save.disabled=true;
+      try{const x=await GUIDE.put(Object.assign(g||{id:uid(),source:null},{text,active:chk.checked}));
+        selGuide=x.id;openGuide(x.id);draw();$('.adm-msg',ed).textContent=x.active?'저장했어요. 다음 답변부터 반영돼요.':'저장했어요. 지금은 꺼져 있어요.'}
+      catch(e){fail(e);save.disabled=false}};
+    del.onclick=async()=>{if(!arm){arm=true;del.textContent='한 번 더 누르면 삭제';return}
+      try{await GUIDE.remove(g.id);selGuide=null;ed.hidden=true;draw()}catch(e){fail(e)}};
+    close.onclick=()=>{selGuide=null;ed.hidden=true;draw()};
+    bar.append(chkL,save,close,del);ed.append(bar,msg)}
+  function showPreview(){
+    ed.hidden=false;ed.innerHTML='';
+    const head=mk('div','ed-head'),close=btnSm('닫기');close.onclick=()=>{ed.hidden=true;draw()};
+    head.append(mk('h3',null,'챗봇에 전달되는 지침'),close);
+    const pre=mk('pre','preview','불러오는 중이에요.');
+    ed.append(head,mk('p','src','고객이 질문할 때마다 서버가 아래 내용을 챗봇의 시스템 지시문으로 넣어요. 상품 목록·주문 조회·개인정보 보호 규칙이 지침보다 우선이에요.'),pre);
+    GUIDE.preview().then(p=>{pre.textContent=p.section||'(사용 중인 지침이 없어요)'}).catch(e=>{pre.textContent=`서버에서 불러오지 못했어요. (${(e&&e.code)||'error'})`})}
+  admRender=draw;
+})();
+
+function route(){const adm=location.hash==='#admin';document.body.classList.toggle('admin-mode',adm);if(adm)admRender()}
+window.addEventListener('hashchange',route);route();
+initData();
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+{
+  "products": {
+    "P01": { "name": "리바이스 트러커 데님 재킷", "line": "아메리칸", "cat": "아우터", "price": 89000, "era": "90년대", "size": "L", "measure": "어깨 50 / 가슴 60 / 총장 66", "cond": "B", "defect": "", "color": "미디엄 인디고", "hex": "#3E5F8A", "tags": "데님,워크,캐주얼,가을", "status": "판매중" },
+    "P02": { "name": "덕 캔버스 초어 코트", "line": "아메리칸", "cat": "아우터", "price": 128000, "era": "90년대", "size": "XL", "measure": "어깨 54 / 가슴 64 / 총장 76", "cond": "C", "defect": "소매 끝 해짐", "color": "브라운 덕", "hex": "#8A5A2B", "tags": "워크웨어,캔버스,초어,가을,겨울", "status": "판매중" },
+    "P03": { "name": "코듀로이 와이드 팬츠", "line": "유러피안", "cat": "하의", "price": 46000, "era": "70년대", "size": "30", "measure": "허리 39 / 총장 104", "cond": "A", "defect": "", "color": "머스타드", "hex": "#C99A2E", "tags": "코듀로이,와이드,가을,레트로", "status": "판매중" },
+    "P04": { "name": "플라워 패턴 롱 원피스", "line": "유러피안", "cat": "원피스", "price": 58000, "era": "70년대", "size": "M", "measure": "가슴 46 / 총장 122", "cond": "B", "defect": "밑단 작은 얼룩", "color": "버건디 플라워", "hex": "#7A2E3A", "tags": "플라워,롱,레트로", "status": "예약중" },
+    "P05": { "name": "울 피셔맨 케이블 니트", "line": "유러피안", "cat": "상의", "price": 49000, "era": "80년대", "size": "L", "measure": "가슴 58 / 총장 68", "cond": "A", "defect": "", "color": "아이보리", "hex": "#E8DFC8", "tags": "니트,울,케이블,가을,겨울", "status": "판매중" },
+    "P06": { "name": "나일론 배색 윈드브레이커", "line": "아메리칸", "cat": "아우터", "price": 54000, "era": "90년대", "size": "L", "measure": "가슴 62 / 총장 70", "cond": "B", "defect": "", "color": "네이비·그린 배색", "hex": "#2E4A3F", "tags": "스포츠,나일론,배색,봄,가을", "status": "판매중" },
+    "P07": { "name": "셀비지 데님 스트레이트 진", "line": "재패니즈", "cat": "하의", "price": 72000, "era": "00년대", "size": "32", "measure": "허리 41 / 총장 106", "cond": "A", "defect": "", "color": "원워시 인디고", "hex": "#23324F", "tags": "데님,셀비지,스트레이트", "status": "판매중" },
+    "P08": { "name": "레드 체크 플란넬 셔츠", "line": "아메리칸", "cat": "상의", "price": 32000, "era": "90년대", "size": "M", "measure": "가슴 54 / 총장 74", "cond": "B", "defect": "", "color": "레드 체크", "hex": "#A33A2E", "tags": "플란넬,체크,가을,레이어드", "status": "판매중" },
+    "P09": { "name": "스웨이드 프린지 웨스턴 재킷", "line": "아메리칸", "cat": "아우터", "price": 145000, "era": "70년대", "size": "M", "measure": "어깨 45 / 가슴 53 / 총장 62", "cond": "C", "defect": "뒷판 색바램", "color": "탄", "hex": "#A7794E", "tags": "스웨이드,웨스턴,프린지,레트로", "status": "판매완료" },
+    "P10": { "name": "해링본 울 블레이저", "line": "유러피안", "cat": "아우터", "price": 68000, "era": "80년대", "size": "L", "measure": "어깨 47 / 가슴 56 / 총장 77", "cond": "A", "defect": "", "color": "그레이 해링본", "hex": "#6E6A63", "tags": "블레이저,울,클래식,가을", "status": "판매중" },
+    "P11": { "name": "오버다이 스웻셔츠", "line": "재패니즈", "cat": "상의", "price": 39000, "era": "00년대", "size": "XL", "measure": "가슴 63 / 총장 70", "cond": "B", "defect": "", "color": "세이지 그린", "hex": "#8A9A7B", "tags": "스웻,캐주얼,오버핏", "status": "판매중" },
+    "P12": { "name": "웨스턴 버클 가죽 벨트", "line": "아메리칸", "cat": "액세서리", "price": 25000, "era": "80년대", "size": "34", "measure": "총길이 105", "cond": "B", "defect": "", "color": "다크 브라운", "hex": "#4A2F1E", "tags": "가죽,벨트,웨스턴", "status": "판매중" }
+  },
+  "inventory": {
+    "P01": { "qty": 1, "location": "A-01", "inDate": "2026-10-28", "inspect": "검수완료", "memo": "" },
+    "P02": { "qty": 1, "location": "A-02", "inDate": "2026-10-28", "inspect": "검수완료", "memo": "소매 해짐 사진 등록됨" },
+    "P03": { "qty": 1, "location": "B-04", "inDate": "2026-11-02", "inspect": "검수완료", "memo": "" },
+    "P04": { "qty": 1, "location": "C-01", "inDate": "2026-11-02", "inspect": "검수완료", "memo": "예약 고객 C003" },
+    "P05": { "qty": 1, "location": "B-01", "inDate": "2026-11-05", "inspect": "검수완료", "memo": "" },
+    "P06": { "qty": 1, "location": "A-05", "inDate": "2026-11-05", "inspect": "검수완료", "memo": "" },
+    "P07": { "qty": 1, "location": "B-07", "inDate": "2026-11-09", "inspect": "검수완료", "memo": "" },
+    "P08": { "qty": 1, "location": "B-02", "inDate": "2026-11-09", "inspect": "검수완료", "memo": "" },
+    "P09": { "qty": 0, "location": "-", "inDate": "2026-10-20", "inspect": "검수완료", "memo": "OS261110003 판매" },
+    "P10": { "qty": 1, "location": "A-08", "inDate": "2026-11-12", "inspect": "검수완료", "memo": "" },
+    "P11": { "qty": 1, "location": "B-09", "inDate": "2026-11-12", "inspect": "검수중", "memo": "" },
+    "P12": { "qty": 1, "location": "D-03", "inDate": "2026-11-14", "inspect": "검수완료", "memo": "" }
+  },
+  "orders": {
+    "OS261110003": { "date": "2026-11-10", "customerId": "C001", "customer": "김하늘", "itemCode": "P09", "itemName": "스웨이드 프린지 웨스턴 재킷", "amount": 145000, "pay": "카드", "status": "배송완료" },
+    "OS261114007": { "date": "2026-11-14", "customerId": "C001", "customer": "김하늘", "itemCode": "P90", "itemName": "울 더플 코트", "amount": 98000, "pay": "간편결제", "status": "배송중" },
+    "OS261115002": { "date": "2026-11-15", "customerId": "C002", "customer": "이도윤", "itemCode": "P91", "itemName": "데님 웨스턴 셔츠", "amount": 52000, "pay": "계좌이체", "status": "배송준비" },
+    "OS261108011": { "date": "2026-11-08", "customerId": "C003", "customer": "박서연", "itemCode": "P92", "itemName": "레이스 칼라 블라우스", "amount": 41000, "pay": "카드", "status": "반품회수중" }
+  },
+  "shipments": {
+    "OS261110003": { "courier": "CJ대한통운", "tracking": "601233457781", "status": "배송완료", "location": "서울 마포구 (문 앞 전달)", "updated": "11.12 14:20", "eta": "2026-11-12" },
+    "OS261114007": { "courier": "우체국택배", "tracking": "689422103357", "status": "배송중", "location": "대전 우편집중국", "updated": "11.16 08:42", "eta": "2026-11-17" },
+    "OS261108011": { "courier": "롯데택배", "tracking": "254188701123", "status": "반품회수중", "location": "고객 주소 수거 예정", "updated": "11.15 17:05", "eta": "2026-11-18" }
+  }
+}

@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>모레상점 고객센터</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Inter:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F4; --panel:#FFFFFF; --ink:#1C2733; --muted:#5E6B78; --line:#D6DDE4;
+  --brand:#1F4E5F; --brand-ink:#FFFFFF; --accent:#E8A33D; --bot:#F3F6F8; --user:#1F4E5F; --user-ink:#FFFFFF;
+  --chip:#FFFFFF; --chip-line:#B9C6D0; --warn:#9A5B00; --warn-bg:#FFF4E2;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10161C; --panel:#18212A; --ink:#E6ECF1; --muted:#9AA8B5; --line:#2B3742;
+    --brand:#5FA3B8; --brand-ink:#0D1A20; --accent:#F0B35A; --bot:#212C36; --user:#2F6F84; --user-ink:#F2F7FA;
+    --chip:#1E2832; --chip-line:#3C4C5A; --warn:#F0B35A; --warn-bg:#2A2216;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10161C; --panel:#18212A; --ink:#E6ECF1; --muted:#9AA8B5; --line:#2B3742;
+  --brand:#5FA3B8; --brand-ink:#0D1A20; --accent:#F0B35A; --bot:#212C36; --user:#2F6F84; --user-ink:#F2F7FA;
+  --chip:#1E2832; --chip-line:#3C4C5A; --warn:#F0B35A; --warn-bg:#2A2216;
+  color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;line-height:1.6}
+.app{height:100%;max-width:720px;margin:0 auto;display:flex;flex-direction:column;background:var(--panel);border-left:1px solid var(--line);border-right:1px solid var(--line)}
+header{padding:14px 18px 0;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:34px;height:34px;border-radius:10px;background:var(--brand);color:var(--brand-ink);display:grid;place-items:center;font-weight:600}
+.brand h1{font-size:16px;margin:0;font-weight:600}
+.brand p{margin:0;font-size:12.5px;color:var(--muted)}
+.status{margin-left:auto;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:#3BA776}
+.tabs{display:flex;gap:4px;margin-top:12px;overflow-x:auto}
+.tab{flex:1;min-width:max-content;border:0;background:none;color:var(--muted);font:inherit;font-size:14px;padding:10px 12px;border-bottom:3px solid transparent;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
+.tab small{display:block;font-size:11.5px;font-weight:400;color:var(--muted)}
+.tab:focus-visible,button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{flex:1;display:none;flex-direction:column;min-height:0}
+.panel.active{display:flex}
+.notice{margin:12px 16px 0;padding:8px 12px;border-radius:8px;background:var(--warn-bg);color:var(--warn);font-size:13px}
+.log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:8px;align-items:flex-end;max-width:100%}
+.row.user{justify-content:flex-end}
+.avatar{flex:none;width:28px;height:28px;border-radius:50%;background:var(--brand);color:var(--brand-ink);font-size:12px;display:grid;place-items:center;font-weight:600}
+.avatar.agent{background:var(--accent);color:#2A1A00}
+.bubble{max-width:78%;padding:10px 14px;border-radius:16px;white-space:pre-wrap;word-break:break-word}
+.bot .bubble{background:var(--bot);border-bottom-left-radius:4px}
+.user .bubble{background:var(--user);color:var(--user-ink);border-bottom-right-radius:4px}
+.time{font-size:11px;color:var(--muted);flex:none}
+.sys{align-self:center;font-size:12.5px;color:var(--muted);padding:2px 10px;border:1px dashed var(--line);border-radius:999px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding-left:36px}
+.chip{font:inherit;font-size:13.5px;padding:6px 12px;border-radius:999px;border:1px solid var(--chip-line);background:var(--chip);color:var(--ink);cursor:pointer}
+.chip:hover{border-color:var(--brand)}
+.chip:disabled{opacity:.45;cursor:default}
+.typing span{display:inline-block;width:6px;height:6px;margin:0 2px;border-radius:50%;background:var(--muted);animation:b 1s infinite}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,60%,100%{opacity:.3}30%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.typing span{animation:none}}
+.composer{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line);background:var(--panel)}
+.composer textarea{flex:1;resize:none;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;max-height:120px}
+.send{font:inherit;font-weight:600;border:0;border-radius:12px;padding:0 18px;background:var(--brand);color:var(--brand-ink);cursor:pointer}
+.send:disabled{opacity:.5;cursor:default}
+.reset{font:inherit;font-size:12.5px;border:0;background:none;color:var(--muted);cursor:pointer;text-decoration:underline;align-self:flex-start;margin:6px 16px 0}
+/* ---------- 탭 4: 미니멀 패션몰 테마 ---------- */
+.app.sleaze{--s-bg:#FFFFFF;--s-ink:#000000;--s-sub:#F4F4F4;--s-line:#E5E5E5;--s-muted:#7A7A7A;--s-me:#000000;--s-me-ink:#FFFFFF;background:var(--s-bg);color:var(--s-ink);border-color:var(--s-line)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .app.sleaze{--s-bg:#000000;--s-ink:#FFFFFF;--s-sub:#1A1A1A;--s-line:#2A2A2A;--s-muted:#8F8F8F;--s-me:#FFFFFF;--s-me-ink:#000000}}
+:root[data-theme="dark"] .app.sleaze{--s-bg:#000000;--s-ink:#FFFFFF;--s-sub:#1A1A1A;--s-line:#2A2A2A;--s-muted:#8F8F8F;--s-me:#FFFFFF;--s-me-ink:#000000}
+.app.sleaze header{background:var(--s-bg);border-bottom:1px solid var(--s-line)}
+.app.sleaze .brand{display:none}
+.app.sleaze .tab,.app.sleaze .tab small{color:var(--s-muted)}
+.app.sleaze .tab[aria-selected="true"]{color:var(--s-ink);border-bottom:2px solid var(--s-ink)}
+.app.sleaze .tab[aria-selected="true"] small{color:var(--s-ink)}
+.app.sleaze :focus-visible{outline-color:var(--s-ink)}
+.shophead{display:none}
+.app.sleaze .shophead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--s-line)}
+.shopname{font-family:Inter,"Helvetica Neue",Arial,sans-serif;font-weight:800;font-size:22px;letter-spacing:-.03em;line-height:1}
+.shopsub{font-size:12.5px;color:var(--s-muted)}
+.app.sleaze .notice{background:var(--s-sub);border-radius:0;color:var(--s-muted);font-size:12.5px}
+.app.sleaze .reset{color:var(--s-muted)}
+.app.sleaze .bubble{border-radius:4px}
+.app.sleaze .bot .bubble{background:var(--s-sub);color:var(--s-ink)}
+.app.sleaze .user .bubble{background:var(--s-me);color:var(--s-me-ink)}
+.app.sleaze .avatar{width:30px;height:30px;border-radius:0;background:var(--s-ink);color:var(--s-bg);font-family:Inter,"Helvetica Neue",Arial,sans-serif;font-weight:800;font-size:9px;letter-spacing:-.02em}
+.app.sleaze .time{color:var(--s-muted)}
+.app.sleaze .chips{padding-left:38px}
+.app.sleaze .chip{background:var(--s-bg);color:var(--s-ink);border:1px solid var(--s-line);border-radius:0;font-size:13px}
+.app.sleaze .chip:hover:not(:disabled){border-color:var(--s-ink)}
+.app.sleaze .typing span{background:var(--s-muted)}
+.app.sleaze .composer{background:var(--s-bg);border-top:1px solid var(--s-line)}
+.app.sleaze .composer textarea{background:var(--s-sub);color:var(--s-ink);border:1px solid transparent;border-radius:0}
+.app.sleaze .composer textarea:focus{border-color:var(--s-ink);outline:none}
+.app.sleaze .send{background:var(--s-ink);color:var(--s-bg);border-radius:0}
+.pcards{display:flex;gap:10px;overflow-x:auto;padding:2px 0 6px 38px;scrollbar-width:thin}
+.pcard{flex:none;width:136px}
+.pthumb{aspect-ratio:3/4;border:1px solid var(--s-line,var(--line));position:relative}
+.pcat{position:absolute;left:6px;bottom:6px;font-size:11px;padding:1px 6px;background:var(--s-bg,var(--panel));color:var(--s-ink,var(--ink))}
+.pbrand{margin-top:8px;font-family:Inter,"Helvetica Neue",Arial,sans-serif;font-weight:800;font-size:10.5px;letter-spacing:-.01em}
+.pname{font-size:13px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pprice{font-weight:600;font-size:14px;margin-top:2px}
+.pcolor{font-size:11.5px;color:var(--s-muted,var(--muted))}
+.adm-link{font-size:12.5px;color:var(--s-muted,var(--muted))}
+.app.sleaze .shophead{align-items:center}
+.login{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:11.5px;color:var(--s-muted,var(--muted));flex:none}
+.login select{font:inherit;font-size:13px;color:var(--s-ink,var(--ink));background:var(--s-sub,var(--bg));border:1px solid var(--s-line,var(--line));padding:4px 8px;border-radius:0;max-width:170px}
+.trk{margin-left:38px;border:1px solid var(--s-line,var(--line));padding:12px 14px;max-width:380px;font-size:13.5px}
+.trk dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0}
+.trk dt{color:var(--s-muted,var(--muted))}
+.trk dd{margin:0}
+#admin{display:none;max-width:1100px;margin:0 auto;padding:20px 18px 40px;color:var(--ink);--danger:#B42318}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #admin{--danger:#FF8A7A}}
+:root[data-theme="dark"] #admin{--danger:#FF8A7A}
+body.admin-mode{background:var(--panel)}
+body.admin-mode .app{display:none}
+body.admin-mode #admin{display:block}
+.adm-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.adm-logo{font-family:Inter,"Helvetica Neue",Arial,sans-serif;font-weight:800;font-size:22px;letter-spacing:-.03em}
+.adm-sub{font-size:13px;color:var(--muted);margin-left:8px}
+#admin a{color:var(--ink)}
+.adm-note{font-size:13px;color:var(--muted);margin:12px 0 0}
+.adm-tabs{display:flex;gap:4px;margin-top:14px;border-bottom:1px solid var(--line);overflow-x:auto}
+.adm-tab{border:0;background:none;font:inherit;font-size:14px;color:var(--muted);padding:10px 14px;border-bottom:2px solid transparent;cursor:pointer}
+.adm-tab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
+.adm-bar{display:flex;align-items:center;justify-content:space-between;margin:14px 0 10px;font-size:13px;color:var(--muted)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line)}
+#admTable{width:100%;border-collapse:collapse;font-size:13.5px}
+#admTable th{text-align:left;font-weight:500;color:var(--muted);background:var(--bg);padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+#admTable td{padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+#admTable tr.row{cursor:pointer}
+#admTable tr.row:hover,#admTable tr.row:focus-visible{background:var(--bg);outline:none}
+#admTable tr.sel{background:var(--bg);box-shadow:inset 3px 0 0 var(--ink)}
+#admTable td.empty{color:var(--muted);text-align:center;padding:28px}
+.editor{margin-top:16px;border:1px solid var(--line);padding:16px}
+.editor h3{margin:0 0 12px;font-size:15px;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
+.f input,.f select{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:8px 10px;border-radius:0}
+.f input:focus,.f select:focus{border-color:var(--ink);outline:none}
+.f input:disabled,.f select:disabled{opacity:.6}
+.ed-bar{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.btn{font:inherit;font-size:13.5px;padding:8px 14px;border:1px solid var(--ink);background:var(--ink);color:var(--panel);border-radius:0;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.danger{background:transparent;color:var(--danger);border-color:var(--danger);margin-left:auto}
+.btn:disabled{opacity:.4;cursor:default}
+.adm-msg{font-size:13px;color:var(--muted);margin:10px 0 0;min-height:1.2em}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true">모</div>
+      <div><h1>모레상점 고객센터</h1><p>상담 챗봇 프로토타입</p></div>
+      <div class="status"><span class="dot"></span>상담 가능</div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-tab="t1">탭 1<small>UI · 시나리오 답변</small></button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="t2">탭 2<small>AI · 주제 제한 없음</small></button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="t3">탭 3<small>AI · 쇼핑몰 주제만</small></button>
+    </div>
+  </header>
+
+
+  <section class="panel active" id="t1" role="tabpanel">
+    <div class="notice">AI 없이 미리 정한 시나리오로만 답해요. 버튼을 누르거나 배송, 환불 같은 단어를 입력해 보세요.</div>
+    <button class="reset" data-reset="t1">대화 새로 시작</button>
+    <div class="log" aria-live="polite"></div>
+    <form class="composer" onsubmit="return false"><textarea rows="1" placeholder="메시지를 입력하세요"></textarea><button class="send">보내기</button></form>
+  </section>
+
+  <section class="panel" id="t2" role="tabpanel">
+    <div class="notice">AI가 주제 제한 없이 답해요. 데모용이며 실제 서비스에 그대로 쓸 수 없어요.</div>
+    <button class="reset" data-reset="t2">대화 새로 시작</button>
+    <div class="log" aria-live="polite"></div>
+    <form class="composer" onsubmit="return false"><textarea rows="1" placeholder="무엇이든 물어보세요"></textarea><button class="send">보내기</button></form>
+  </section>
+
+  <section class="panel" id="t3" role="tabpanel">
+    <div class="notice">AI가 모레상점 쇼핑 관련 문의에만 답해요. 다른 주제는 정중히 안내만 해요. 주문 정보는 실제로 조회되지 않아요.</div>
+    <button class="reset" data-reset="t3">대화 새로 시작</button>
+    <div class="log" aria-live="polite"></div>
+    <form class="composer" onsubmit="return false"><textarea rows="1" placeholder="주문, 배송, 교환·환불 문의를 입력하세요"></textarea><button class="send">보내기</button></form>
+  </section>
+</div>
+
+<script>
+const now=()=>new Date().toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'});
+const $=(s,r=document)=>r.querySelector(s);
+const stamp=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return '’'+String(d.getFullYear()).slice(2)+' '+p(d.getMonth()+1)+' '+p(d.getDate())+'  '+p(d.getHours())+':'+p(d.getMinutes())};
+
+/* ---------- 공통 렌더링 ---------- */
+function addMsg(log,who,text,opts={}){
+  const row=document.createElement('div');row.className='row '+(who==='user'?'user':'bot');
+  const b=document.createElement('div');b.className='bubble';b.textContent=text;
+  const sl=!!log.closest('#t4');
+  const t=document.createElement('span');t.className='time';t.textContent=now();
+  if(who==='user'){row.append(t,b)}else{
+    const a=document.createElement('div');a.className='avatar'+(who==='agent'?' agent':'');a.textContent=who==='agent'?'상':(sl?'OS':'봇');a.setAttribute('aria-hidden','true');
+    row.append(a,b,t)}
+  log.append(row);
+  if(opts.chips&&opts.chips.length){
+    const c=document.createElement('div');c.className='chips';
+    opts.chips.forEach(([label,fn])=>{const x=document.createElement('button');x.className='chip';x.type='button';x.textContent=label;
+      x.onclick=()=>{c.querySelectorAll('button').forEach(k=>k.disabled=true);fn(label)};c.append(x)});
+    log.append(c)}
+  log.scrollTop=log.scrollHeight;return b}
+function addSys(log,text){const s=document.createElement('div');s.className='sys';s.textContent=text;log.append(s);log.scrollTop=log.scrollHeight}
+function typing(log){const row=document.createElement('div');row.className='row bot';
+  row.innerHTML='<div class="avatar" aria-hidden="true">'+(log.closest('#t4')?'OS':'봇')+'</div><div class="bubble typing" aria-label="입력 중"><span></span><span></span><span></span></div>';
+  log.append(row);log.scrollTop=log.scrollHeight;return row}
+function wireComposer(panel,onSend){
+  const ta=$('textarea',panel),btn=$('.send',panel);
+  const go=()=>{const v=ta.value.trim();if(!v||btn.disabled)return;ta.value='';onSend(v)};
+  btn.onclick=go;
+  ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();go()}});
+  return {ta,btn}}
+
+/* ---------- 탭 전환 ---------- */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===t.dataset.tab));
+  $('.app').classList.toggle('sleaze',t.dataset.tab==='t4');});
+
+/* ---------- 탭 1: 시나리오 ---------- */
+const p1=$('#t1'),log1=$('.log',p1);
+const N={
+  home:{text:'안녕하세요, 모레상점 고객센터입니다.\n무엇을 도와드릴까요?',chips:['주문·배송 조회','교환·반품','결제·환불','상담원 연결']},
+  '주문·배송 조회':{text:'주문 후 보통 1~3일(영업일) 안에 받아보실 수 있어요.\n마이페이지 > 주문내역에서 송장번호를 확인할 수 있어요.',chips:['배송이 늦어요','주문 취소하고 싶어요','처음으로']},
+  '배송이 늦어요':{text:'불편을 드려 죄송해요.\n출고 후 3일이 지났다면 택배사 사정일 수 있어요. 주문번호를 남겨주시면 상담원이 확인해 드려요.',chips:['상담원 연결','처음으로']},
+  '주문 취소하고 싶어요':{text:'출고 전이라면 마이페이지 > 주문내역에서 바로 취소할 수 있어요.\n이미 출고됐다면 받으신 뒤 반품으로 진행해 주세요.',chips:['교환·반품','처음으로']},
+  '교환·반품':{text:'상품을 받으신 날부터 7일 안에 신청할 수 있어요.\n단순 변심은 왕복 배송비가 들고, 상품 불량은 무료예요.',chips:['반품 신청 방법','처음으로']},
+  '반품 신청 방법':{text:'마이페이지 > 주문내역 > 반품 신청을 누르고 사유를 고르면 돼요.\n수거 기사님이 2~3일 안에 방문해요.',chips:['결제·환불','처음으로']},
+  '결제·환불':{text:'반품 상품이 도착해 검수가 끝나면 환불돼요.\n카드는 3~5일, 계좌이체는 1~2일 정도 걸려요.',chips:['환불이 안 들어왔어요','처음으로']},
+  '환불이 안 들어왔어요':{text:'안내한 기간이 지났다면 상담원이 결제 내역을 직접 확인해 드릴게요.',chips:['상담원 연결','처음으로']},
+};
+const keywords=[['배송','주문·배송 조회'],['늦','배송이 늦어요'],['취소','주문 취소하고 싶어요'],['교환','교환·반품'],['반품','교환·반품'],['환불','결제·환불'],['결제','결제·환불'],['상담','상담원 연결'],['사람','상담원 연결']];
+function show1(key){
+  if(key==='상담원 연결'){return handoff()}
+  if(key==='처음으로')key='home';
+  const n=N[key];const ty=typing(log1);
+  setTimeout(()=>{ty.remove();addMsg(log1,'bot',n.text,{chips:n.chips.map(c=>[c,pick])})},550)}
+function pick(label){addMsg(log1,'user',label);show1(label)}
+function handoff(){
+  const ty=typing(log1);
+  setTimeout(()=>{ty.remove();addSys(log1,'상담원에게 연결하고 있어요 · 예상 대기 1분');
+    setTimeout(()=>{addSys(log1,'김모레 상담원이 입장했어요');
+      addMsg(log1,'agent','안녕하세요, 상담원 김모레입니다.\n어떤 점이 불편하셨는지 말씀해 주세요.',{chips:[['챗봇으로 돌아가기',l=>{addMsg(log1,'user',l);addSys(log1,'상담이 종료됐어요');show1('home')}]]})},1200)},500)}
+wireComposer(p1,v=>{addMsg(log1,'user',v);
+  const hit=keywords.find(([k])=>v.includes(k));
+  if(hit)return show1(hit[1]);
+  const ty=typing(log1);setTimeout(()=>{ty.remove();addMsg(log1,'bot','정확히 이해하지 못했어요.\n아래에서 문의 유형을 골라주세요.',{chips:N.home.chips.map(c=>[c,pick])})},500)});
+show1('home');
+
+/* ---------- AI 공통 ---------- */
+/* 로컬 서버(server.js)를 거쳐 Claude를 불러요. API 키는 서버의 .env에만 있어요. */
+function aiError(code,detail){const e=new Error(detail||code);e.code=code;e.detail=detail;return e}
+async function claude(payload,signal){
+  let r;
+  try{r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal})}
+  catch(e){if(e&&e.name==='AbortError')throw aiError('cancelled');throw aiError('server_down')}
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||j.error)throw aiError((j.error&&j.error.code)||'server_error',j.error&&j.error.message);
+  if(j.stop_reason==='refusal')throw aiError('refused');
+  return j}
+/* 거절 후 다른 모델로 넘어간 경우(fallback 블록), 그 뒤의 내용만 유효한 답이에요 */
+const afterFallback=content=>{const i=content.map(b=>b.type).lastIndexOf('fallback');return {i,tail:content.slice(i+1)}};
+const textOf=blocks=>blocks.filter(b=>b.type==='text').map(b=>b.text).join('').trim();
+async function askText(prompt,signal){
+  const r=await claude({messages:[{role:'user',content:prompt}]},signal);
+  const out=textOf(afterFallback(r.content||[]).tail);
+  if(!out)throw aiError('empty_completion');return out}
+/* 도구를 쓰는 대화: Claude가 도구를 부르면 브라우저에서 실행해 결과를 돌려줘요 */
+async function askWithTools(prompt,tools,signal){
+  const defs=tools.map(t=>({name:t.name,description:t.description,input_schema:t.inputSchema}));
+  const messages=[{role:'user',content:prompt}];
+  for(let i=0;i<6;i++){
+    const r=await claude({messages,tools:defs},signal);
+    const content=r.content||[];const {i:fb,tail}=afterFallback(content);
+    const uses=tail.filter(b=>b.type==='tool_use');
+    if(r.stop_reason!=='tool_use'||!uses.length){const out=textOf(tail);if(!out)throw aiError('empty_completion');return out}
+    // 응답은 그대로 돌려보내되, 거절 전(fallback 블록 앞)의 생각·도구 호출 블록만 뺍니다
+    messages.push({role:'assistant',content:content.filter((b,k)=>!(k<fb&&['thinking','redacted_thinking','tool_use'].includes(b.type)))});
+    messages.push({role:'user',content:uses.map(u=>{const t=tools.find(x=>x.name===u.name);let res,bad=false;
+      try{res=t?t.execute(u.input||{}):{error:'없는 도구예요.'};if(!t)bad=true}catch(e){res={error:String(e&&e.message||e)};bad=true}
+      const out={type:'tool_result',tool_use_id:u.id,content:JSON.stringify(res)};if(bad)out.is_error=true;return out})})}
+  throw aiError('too_many_steps')}
+function parseJson(t){
+  const s=String(t).trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
+  try{return JSON.parse(s)}catch(_){}
+  const a=s.indexOf('{'),b=s.lastIndexOf('}');
+  if(a>=0&&b>a){try{return JSON.parse(s.slice(a,b+1))}catch(_){}}
+  throw aiError('invalid_json')}
+const ERR={
+  server_down:'서버에 연결하지 못했어요. 터미널에서 npm start로 서버를 켠 뒤 http://localhost:3000 으로 열어 주세요.',
+  no_key:'.env 파일에 ANTHROPIC_API_KEY가 비어 있어요. 키를 넣고 서버를 다시 켜 주세요.',
+  bad_key:'API 키가 올바르지 않아요. .env의 ANTHROPIC_API_KEY를 확인하고 서버를 다시 켜 주세요.',
+  bad_model:'.env의 CLAUDE_MODEL 이름을 찾을 수 없어요. 모델 이름을 확인해 주세요.',
+  api_error:'Claude API가 오류를 돌려줬어요. 잠시 뒤 다시 보내 주세요.',
+  overloaded:'Claude 서버가 바빠요. 잠시 뒤에 다시 보내 주세요.',
+  network:'서버가 Claude API에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.',
+  rate_limited:'요청이 많아요(사용 한도). 잠시 뒤에 다시 보내 주세요.',
+  invalid_json:'답변 형식이 맞지 않았어요. 한 번 더 보내 주세요.',
+  empty_completion:'빈 답변이 왔어요. 다시 보내 주세요.',
+  refused:'Claude가 이 요청에는 답하지 않았어요.',
+  too_many_steps:'조회 단계가 너무 길어졌어요. 질문을 조금 더 구체적으로 보내 주세요.',
+  cancelled:'요청이 취소됐어요.'
+};
+function showErr(log,e){
+  const code=(e&&e.code)||'unknown';
+  if(code==='cancelled')return;
+  const detail=e&&e.detail&&!ERR[code]?'\n'+e.detail:'';
+  addMsg(log,'bot',(ERR[code]||'답변을 받지 못했어요. 다시 보내 주세요.')+detail+'\n(오류 코드: '+code+')');
+  if(e&&e.detail&&ERR[code])console.warn('[AI 오류]',code,e.detail);
+  log.scrollTop=log.scrollHeight}
+
+function aiTab(panelId,greeting,buildPrompt,starters=[]){
+  const panel=$('#'+panelId),log=$('.log',panel);let history=[];let ctrl=null;
+  const {ta,btn}=wireComposer(panel,send);
+  function start(){log.innerHTML='';history=[];addMsg(log,'bot',greeting,{chips:starters.map(s=>[s,send])})}
+  async function send(v){
+    addMsg(log,'user',v);history.push({who:'고객',text:v});
+    btn.disabled=true;const ty=typing(log);
+    ctrl=new AbortController();const my=ctrl;
+    try{
+      const out=await askText(buildPrompt(history),my.signal);
+      if(my!==ctrl)return;
+      ty.remove();addMsg(log,'bot',out);
+      history.push({who:'상담봇',text:out});
+    }catch(e){ty.remove();if(my===ctrl)showErr(log,e)}
+    finally{btn.disabled=false;ta.focus()}}
+  $('[data-reset]',panel).onclick=()=>{if(ctrl)ctrl.abort();start()};
+  start()}
+
+const transcript=h=>h.map(m=>m.who+': '+m.text).join('\n');
+
+/* ---------- 탭 2: 주제 제한 없음 ---------- */
+aiTab('t2','안녕하세요! 궁금한 것을 무엇이든 물어보세요.',h=>
+`당신은 친절한 AI 상담 챗봇입니다. 주제 제한 없이 어떤 질문에도 한국어로 답하세요.
+채팅창에 맞게 짧고 읽기 쉽게, 마크다운 기호 없이 일반 텍스트로 답하세요.
+
+지금까지의 대화:
+${transcript(h)}
+
+마지막 고객 메시지에 대한 상담봇의 답변만 출력하세요.`);
+
+/* ---------- 탭 3: 쇼핑몰 주제 제한 ---------- */
+aiTab('t3','안녕하세요, 모레상점 고객센터 AI 상담봇이에요.\n주문, 배송, 교환·반품, 환불, 회원 혜택 문의를 도와드려요.',h=>
+`당신은 온라인 쇼핑몰 모레상점의 고객센터 상담봇입니다.
+
+[답변 가능한 주제]
+주문·결제, 배송, 교환·반품, 환불, 상품 문의, 회원·적립금·쿠폰 등 모레상점 쇼핑 이용과 직접 관련된 문의만 답합니다.
+
+[모레상점 정책] (이 정보만 근거로 답하고, 없는 정책은 지어내지 마세요)
+- 배송: 결제 후 1~3영업일 도착, 5만원 이상 무료배송, 미만은 배송비 3,000원
+- 주문 취소: 출고 전에는 마이페이지 > 주문내역에서 직접 취소 가능
+- 교환·반품: 수령일로부터 7일 이내 신청, 단순 변심은 왕복 배송비 6,000원 고객 부담, 불량·오배송은 무료
+- 환불: 반품 검수 후 카드 3~5영업일, 계좌이체 1~2영업일
+- 적립금: 구매 확정 시 결제액의 1% 적립
+- 상담원 운영시간: 평일 10:00~18:00
+
+[규칙]
+- 쇼핑몰 이용과 관련 없는 질문(일반 상식, 코딩, 날씨, 잡담, 다른 회사 이야기 등)에는 답하지 마세요. 정중하게 모레상점 관련 문의만 도와드릴 수 있다고 한 문장으로 안내하고, 도울 수 있는 문의 예시를 짧게 제안하세요.
+- 실제 주문 정보는 조회할 수 없습니다. 특정 주문 확인이 필요하면 상담원 연결(운영시간 내)을 안내하세요.
+- 정책에 없는 내용은 추측하지 말고 상담원 확인이 필요하다고 안내하세요.
+- 한국어, 존댓말, 짧고 친절하게, 마크다운 기호 없이 일반 텍스트로 답하세요.
+
+지금까지의 대화:
+${transcript(h)}
+
+마지막 고객 메시지에 대한 상담봇의 답변만 출력하세요.`);
+
+
+/* ---------- 서버·API 키 상태 표시 ---------- */
+(async()=>{const st=$('.status');if(!st)return;
+  try{const s=await (await fetch('/api/status')).json();
+    if(!s.hasKey)st.innerHTML='<span class="dot" style="background:#C2410C"></span>API 키 없음'}
+  catch(_){st.innerHTML='<span class="dot" style="background:#C2410C"></span>서버 꺼짐'}})();
+</script>
+</body>
+</html>

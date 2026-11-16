@@ -1,0 +1,15 @@
+{
+  "name": "old-stock-chatbot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OLD STOCK 빈티지 쇼핑몰 상담 챗봇 (Claude API, 로컬 테스트용)",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
