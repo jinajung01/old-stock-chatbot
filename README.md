@@ -108,7 +108,14 @@ npm install --prefix functions
 firebase deploy
 ```
 
-끝나면 `https://<프로젝트ID>.web.app` 주소가 나와요.
+끝나면 `https://<프로젝트ID>.web.app` 주소가 나와요. (이 저장소는 `old-stock-46cf9` 프로젝트에 연결되어 있어요 → https://old-stock-46cf9.web.app)
+
+- 첫 배포 마지막에 "컨테이너 이미지를 며칠 보관할지" 물으면 Enter(기본 1일)를 누르세요. 오래된 이미지가 자동으로 지워져 요금이 쌓이지 않아요.
+- `User code failed to load ... Timeout after 10000` 오류가 나면 PC에서 코드 파일을 읽는 게 느린 경우예요(백신 검사 등). 기다리는 시간을 늘려서 다시 배포하세요.
+  ```
+  # PowerShell
+  $env:FUNCTIONS_DISCOVERY_TIMEOUT = '120'; firebase deploy
+  ```
 
 1. `https://<프로젝트ID>.web.app/#admin` → **Google로 관리자 로그인** (5번에서 등록한 이메일)
 2. 상품 탭의 **예시 데이터 넣기**를 누르면 기본 상품·재고·주문·배송이 들어가요. (상품이 하나도 없을 때만 보여요)
