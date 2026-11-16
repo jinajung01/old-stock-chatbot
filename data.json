@@ -28,8 +28,8 @@
     "P12": { "qty": 1, "location": "D-03", "inDate": "2026-11-14", "inspect": "검수완료", "memo": "" }
   },
   "orders": {
-    "OS261110003": { "date": "2026-11-10", "customerId": "C001", "customer": "김하늘", "itemCode": "P09", "itemName": "스웨이드 프린지 웨스턴 재킷", "amount": 145000, "pay": "카드", "status": "배송완료" },
-    "OS261114007": { "date": "2026-11-14", "customerId": "C001", "customer": "김하늘", "itemCode": "P90", "itemName": "울 더플 코트", "amount": 98000, "pay": "간편결제", "status": "배송중" },
+    "OS261110003": { "date": "2026-11-10", "customerId": "C001", "customer": "김유빈", "itemCode": "P09", "itemName": "스웨이드 프린지 웨스턴 재킷", "amount": 145000, "pay": "카드", "status": "배송완료" },
+    "OS261114007": { "date": "2026-11-14", "customerId": "C001", "customer": "김유빈", "itemCode": "P90", "itemName": "울 더플 코트", "amount": 98000, "pay": "간편결제", "status": "배송중" },
     "OS261115002": { "date": "2026-11-15", "customerId": "C002", "customer": "이도윤", "itemCode": "P91", "itemName": "데님 웨스턴 셔츠", "amount": 52000, "pay": "계좌이체", "status": "배송준비" },
     "OS261108011": { "date": "2026-11-08", "customerId": "C003", "customer": "박서연", "itemCode": "P92", "itemName": "레이스 칼라 블라우스", "amount": 41000, "pay": "카드", "status": "반품회수중" }
   },
