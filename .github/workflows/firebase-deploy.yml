@@ -1,0 +1,35 @@
+# main 브랜치에 코드를 올리면 Firebase(Hosting + Functions + Firestore 규칙)에 자동 배포
+#
+# 쓰기 전에 GitHub 저장소 → Settings → Secrets and variables → Actions 에서 두 가지를 등록하세요.
+#   Variables 탭: FIREBASE_PROJECT_ID  = Firebase 프로젝트 ID (예: old-stock-12345)
+#   Secrets 탭:   FIREBASE_SERVICE_ACCOUNT = 배포용 서비스 계정 키(JSON) 전체 내용
+# 둘 다 등록하기 전에는 이 작업이 실행되지 않고 건너뛰어요.
+
+name: Firebase 배포
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: ${{ vars.FIREBASE_PROJECT_ID != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Functions 패키지 설치
+        run: npm install --prefix functions --no-fund --no-audit
+
+      - name: Google Cloud 로그인 (서비스 계정)
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Firebase 배포
+        run: npx --yes firebase-tools@15 deploy --only hosting,functions,firestore --project "${{ vars.FIREBASE_PROJECT_ID }}" --non-interactive --force

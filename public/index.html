@@ -156,6 +156,9 @@ body.admin-mode #admin{display:block}
 /* ---------- 관리자: 대화 기록 · 지침 ---------- */
 .adm-bar{gap:10px;flex-wrap:wrap}
 .adm-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto}
+.adm-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+.adm-auth{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+.adm-auth .btn{font-size:12.5px;padding:5px 10px}
 .adm-tools:empty{display:none}
 .adm-tools select{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:6px 8px;border-radius:0}
 .adm-tools .btn.danger{margin-left:0}
@@ -201,7 +204,7 @@ pre.preview{white-space:pre-wrap;word-break:break-word;font:12.5px/1.7 ui-monosp
 <div id="admin">
   <div class="adm-head">
     <div><span class="adm-logo">OLD STOCK</span><span class="adm-sub">관리자</span></div>
-    <a class="adm-link" href="#">챗봇 화면으로</a>
+    <div class="adm-right"><span class="adm-auth" id="admAuth"></span><a class="adm-link" href="#">챗봇 화면으로</a></div>
   </div>
   <p class="adm-note" id="admNote">데이터를 불러오는 중이에요.</p>
   <div class="adm-tabs" role="tablist">
@@ -290,7 +293,8 @@ function parseJson(t){
   if(a>=0&&b>a){try{return JSON.parse(s.slice(a,b+1))}catch(_){}}
   throw aiError('invalid_json')}
 const ERR={
-  server_down:'서버에 연결하지 못했어요. 터미널에서 npm start로 서버를 켠 뒤 http://localhost:3000 으로 열어 주세요.',
+  server_down:'서버에 연결하지 못했어요. 잠시 뒤에 다시 보내 주세요. (내 PC에서 실행 중이면 터미널에서 npm start로 서버를 켰는지 확인해 주세요.)',
+  too_many:'질문이 너무 많아요. 몇 분 뒤에 다시 보내 주세요.',
   no_key:'.env 파일에 ANTHROPIC_API_KEY가 비어 있어요. 키를 넣고 서버를 다시 켜 주세요.',
   bad_key:'API 키가 올바르지 않아요. .env의 ANTHROPIC_API_KEY를 확인하고 서버를 다시 켜 주세요.',
   bad_model:'.env의 CLAUDE_MODEL 이름을 찾을 수 없어요. 모델 이름을 확인해 주세요.',
@@ -316,30 +320,67 @@ const transcript=h=>h.map(m=>m.who+': '+m.text).join('\n');
 
 /* ---------- 데이터 저장소 (관리자와 챗봇이 함께 사용) ---------- */
 const DATA={products:{},inventory:{},orders:{},shipments:{},guidelines:{}};
-const DSTATE={db:null,status:'loading',canEdit:false};
+const DSTATE={db:null,status:'loading',canEdit:false,mode:'',email:null};   // mode: 'local'(내 PC) | 'firebase' — 서버에 물어본 뒤 정해짐
 /* 상품·주문 데이터를 다 불러온 뒤에 챗봇이 답하도록 기다릴 때 사용 */
 let markDataReady;const dataReady=new Promise(r=>{markDataReady=r});
 const won=n=>Number(n||0).toLocaleString('ko-KR')+'원';
 let admRender=()=>{};let custRender=()=>{};
-/* 데이터는 로컬 서버의 data.json 파일에 저장돼요 */
+
+/* ---------- 관리자 로그인 (Firebase에 배포했을 때만) ----------
+   Firebase Hosting은 /__/firebase/init.json 으로 프로젝트 설정을 알려 줘요.
+   내 PC에서는 이 주소가 없으므로 로그인 없이 관리자 기능을 써요(서버가 이 PC에서만 열림). */
+function loadScript(src){return new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>no(new Error('불러오기 실패: '+src));document.head.append(s)})}
+const FB={auth:null,user:null,ready:null,
+  /* 관리자 화면을 열 때 한 번만 준비 (손님 채팅 화면에서는 불러오지 않음) */
+  init(){
+    if(!FB.ready)FB.ready=(async()=>{
+      let cfg;try{const r=await fetch('/__/firebase/init.json');if(!r.ok)return false;cfg=await r.json()}catch(_){return false}
+      await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+      await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js');
+      firebase.initializeApp(cfg);FB.auth=firebase.auth();
+      await new Promise(done=>{let first=true;FB.auth.onAuthStateChanged(u=>{FB.user=u;if(first){first=false;done()}else afterAuthChange()})});
+      return true})().catch(e=>{console.warn('[로그인 준비 실패]',e);return false});
+    return FB.ready},
+  async token(){try{return FB.user?await FB.user.getIdToken():null}catch(_){return null}},
+  login(){return FB.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())},
+  logout(){return FB.auth.signOut()}};
+async function authHeaders(extra={}){const t=await FB.token();return t?Object.assign({Authorization:'Bearer '+t},extra):extra}
+/* 서버에 지금 사람이 관리자인지 물어봄 (내 PC 모드면 항상 관리자) */
+async function checkMe(){
+  try{const me=await (await fetch('/api/me',{headers:await authHeaders()})).json();
+    DSTATE.mode=me.mode||'local';DSTATE.email=me.email||null;DSTATE.canEdit=!!me.admin}
+  catch(_){DSTATE.canEdit=false}}
+async function afterAuthChange(){
+  await checkMe();try{await refreshData()}catch(_){}
+  if(DSTATE.canEdit)await migrateLocalGuides();
+  admRender();custRender()}
+/* 관리자 기능 오류를 알기 쉬운 문장으로 */
+function errText(e){
+  const c=e&&e.code;
+  if(c==='login_required')return '관리자로 로그인해 주세요.';
+  if(c==='not_admin')return '이 계정은 관리자로 등록되어 있지 않아요.';
+  if(c==='bad_guideline')return '지침 내용은 1~300자로 입력해 주세요.';
+  return `서버에 저장하지 못했어요. 연결을 확인해 주세요. (${c||'error'})`}
+
+/* 데이터는 서버에 저장돼요 (내 PC: data.json, Firebase: Firestore) */
+async function api(method,url,body){
+  const r=await fetch(url,{method,headers:await authHeaders(body!==undefined?{'Content-Type':'application/json'}:{}),body:body!==undefined?JSON.stringify(body):undefined});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw aiError((j.error&&j.error.code)||'http_'+r.status,j.error&&j.error.message);
+  return j}
 const store={
-  async set(k,id,obj){
-    const r=await fetch('/api/data/'+k+'/'+encodeURIComponent(id),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});
-    const j=await r.json().catch(()=>({}));
-    if(!r.ok)throw aiError((j.error&&j.error.code)||'http_'+r.status,j.error&&j.error.message);
-    DATA[k][id]=j.saved||obj;custRender()},
-  async remove(k,id){
-    const r=await fetch('/api/data/'+k+'/'+encodeURIComponent(id),{method:'DELETE'});
-    if(!r.ok){const j=await r.json().catch(()=>({}));throw aiError((j.error&&j.error.code)||'http_'+r.status)}
-    delete DATA[k][id];custRender()}};
+  async set(k,id,obj){const j=await api('PUT','/api/data/'+k+'/'+encodeURIComponent(id),obj);DATA[k][id]=j.saved||obj;custRender()},
+  async remove(k,id){await api('DELETE','/api/data/'+k+'/'+encodeURIComponent(id));delete DATA[k][id];custRender()}};
 /* 서버의 최신 데이터를 다시 읽음 (다른 브라우저에서 바꾼 지침 등을 반영할 때) */
 async function refreshData(){
-  const r=await fetch('/api/data');if(!r.ok)throw aiError('http_'+r.status);
+  const r=await fetch('/api/data',{headers:await authHeaders()});if(!r.ok)throw aiError('http_'+r.status);
   const d=await r.json();Object.keys(DATA).forEach(k=>{DATA[k]=(d&&d[k])||{}})}
 async function initData(){
-  try{await refreshData();DSTATE.db=store;DSTATE.canEdit=true;DSTATE.status='ready'}
+  if(location.hash==='#admin')await FB.init();
+  await checkMe();
+  try{await refreshData();DSTATE.db=store;DSTATE.status='ready'}
   catch(_){DSTATE.status='none'}
-  await migrateLocalGuides();
+  if(DSTATE.canEdit)await migrateLocalGuides();
   admRender();custRender();markDataReady();
   try{const s=await (await fetch('/api/status')).json();
     if(!s.hasKey&&$('.status')){$('.status').innerHTML='<span class="dot" style="background:#C2410C"></span>API 키 없음'}}
@@ -373,7 +414,7 @@ const GUIDE={
   get:id=>id&&DATA.guidelines[id]?Object.assign({id},DATA.guidelines[id]):null,
   async put(g){const {id,...rest}=g;await store.set('guidelines',id,rest);return GUIDE.get(id)},
   remove:id=>store.remove('guidelines',id),
-  async preview(){const r=await fetch('/api/guidelines/active');if(!r.ok)throw aiError('http_'+r.status);return r.json()}};
+  preview:()=>api('GET','/api/guidelines/active')};
 /* 예전 버전에서 브라우저에 저장해 둔 지침이 있으면 서버로 한 번 옮김 */
 async function migrateLocalGuides(){
   const old=lsRead(LS_GUIDE);if(!old.length||DSTATE.status!=='ready')return;
@@ -536,21 +577,46 @@ const SCHEMA={
   window.addEventListener('storage',e=>{if((e.key===LS_CONV||e.key===null)&&cur==='logs')draw()});
   /* 지침은 서버에 있으므로, 지침 탭을 열 때마다 서버의 최신 목록을 다시 읽음 */
   document.querySelector('.adm-tab[data-k="guides"]').addEventListener('click',()=>{refreshData().then(()=>{if(cur==='guides')draw()}).catch(()=>{})});
+  /* 오른쪽 위 로그인 상태 (Firebase에 배포했을 때만 로그인 버튼이 보임) */
+  const authBox=$('#admAuth');
+  function drawAuth(){
+    authBox.innerHTML='';
+    if(!DSTATE.mode)return;
+    if(DSTATE.mode!=='firebase'){authBox.append(mk('span',null,'내 PC 모드 · 로그인 없이 편집'));return}
+    if(!FB.auth){authBox.append(mk('span',null,'로그인 준비 중'));return}
+    if(!FB.user){const b=btnSm('Google로 관리자 로그인','btn sm');
+      b.onclick=()=>FB.login().catch(e=>{if(e&&e.code!=='auth/popup-closed-by-user')alert('로그인하지 못했어요: '+(e.message||e))});
+      authBox.append(b);return}
+    authBox.append(mk('span',null,`${FB.user.email}${DSTATE.canEdit?' · 관리자':' · 관리자 아님'}`));
+    const out=btnSm('로그아웃');out.onclick=()=>FB.logout();authBox.append(out)}
+  /* 상품이 하나도 없을 때(새 Firebase 프로젝트) 예시 데이터를 한 번에 넣는 버튼 */
+  function seedButton(){
+    if(!DSTATE.canEdit||Object.keys(DATA.products).length)return;
+    const b=btnSm('예시 데이터 넣기','btn sm');
+    b.onclick=async()=>{b.disabled=true;b.textContent='넣는 중이에요';
+      try{await api('POST','/api/admin/seed',{});await refreshData();custRender();draw()}
+      catch(e){b.disabled=false;b.textContent='예시 데이터 넣기';alert(errText(e))}};
+    tools.append(b)}
   function draw(){
     if(!document.body.classList.contains('admin-mode'))return;
+    drawAuth();
     tools.innerHTML='';add.hidden=false;
+    const needLogin=DSTATE.mode==='firebase'&&!DSTATE.canEdit;
+    const loginNote=!FB.user?'관리자로 로그인해야 데이터를 고치고 대화 피드백·지침을 관리할 수 있어요.'
+      :'이 계정은 관리자로 등록되어 있지 않아요. Firebase 콘솔 → Firestore → admins 컬렉션에 이 이메일을 문서 ID로 추가해 주세요.';
     if(cur==='logs'||cur==='guides'){
-      note.textContent=cur==='logs'
+      note.textContent=needLogin?loginNote:cur==='logs'
         ?'대화 기록은 이 브라우저(localStorage)에만 저장돼요. 같은 브라우저·같은 주소에서 나눈 대화만 보여요.'
-        :'지침은 서버(data.json)에 저장돼요. 어느 브라우저에서 질문해도 사용 중인 지침이 챗봇 답변에 반영돼요.';
+        :'지침은 서버에 저장돼요(내 PC: data.json, Firebase: Firestore). 어느 브라우저에서 질문해도 사용 중인 지침이 챗봇 답변에 반영돼요.';
       return cur==='logs'?drawLogs():drawGuides()}
     const S=SCHEMA[cur];const st=DSTATE.status;
-    note.textContent=st==='none'?'서버에 연결할 수 없어요. 터미널에서 npm start로 서버를 켠 뒤 http://localhost:3000/#admin 으로 열어 주세요.'
+    note.textContent=st==='none'?'서버에 연결할 수 없어요. 잠시 뒤 새로고침해 주세요. (내 PC에서는 터미널에서 npm start로 서버를 켰는지 확인해 주세요.)'
       :st==='error'?'데이터를 불러오지 못했어요. 페이지를 새로고침해 주세요.'
-      :st==='slow'?'연결이 느려서 데이터가 최신이 아닐 수 있어요.'
       :st==='loading'?'데이터를 불러오는 중이에요.'
-      :DSTATE.canEdit?'저장하면 챗봇에 바로 반영돼요. 데이터는 프로젝트 폴더의 data.json에 저장돼요.':'보기 전용이에요. 편집 권한이 있는 사람만 수정할 수 있어요.';
+      :needLogin?loginNote
+      :`저장하면 챗봇에 바로 반영돼요. 데이터는 ${DSTATE.mode==='firebase'?'Firestore':'프로젝트 폴더의 data.json'}에 저장돼요.`;
     add.disabled=!DSTATE.canEdit||!DSTATE.db;
+    if(cur==='products')seedButton();
     const rows=Object.entries(DATA[cur]).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);
     cnt.textContent=`${S.label} ${rows.length}건`;
     tbl.innerHTML='';
@@ -598,13 +664,13 @@ const SCHEMA={
       try{await DSTATE.db.set(k,key,obj);
         msg.textContent=wasNew?'추가했어요. 챗봇에 바로 반영돼요.':'저장했어요. 챗봇에 바로 반영돼요.';
         sel=key;isNew=false;inputs[S.key].disabled=true;del.hidden=false;save.textContent='저장';draw()}
-      catch(e){msg.textContent='저장하지 못했어요. 편집 권한과 연결을 확인한 뒤 다시 시도하세요. ('+((e&&e.code)||'error')+')'}
+      catch(e){msg.textContent=errText(e)}
       finally{saving=false;save.disabled=!DSTATE.canEdit}};
     del.onclick=async()=>{
       if(!delArm){delArm=true;del.textContent='한 번 더 누르면 삭제';return}
       del.disabled=true;msg.textContent='삭제하는 중이에요.';
       try{await DSTATE.db.remove(k,sel);ed.hidden=true;sel=null;draw()}
-      catch(e){msg.textContent='삭제하지 못했어요. ('+((e&&e.code)||'error')+')';del.disabled=false}};
+      catch(e){msg.textContent=errText(e).replace('저장하지','삭제하지');del.disabled=false}};
     close.onclick=()=>{ed.hidden=true;sel=null;isNew=false;draw()};
     bar.append(save,close,del);ed.append(bar,msg)}
 
@@ -688,7 +754,7 @@ const SCHEMA={
         if(!LOG.setFeedback(cid,t.id,nf)){msg.textContent='피드백을 저장하지 못했어요. 기록이 지워졌는지 확인해 주세요.';return}
         Object.assign(fb,nf);t.feedback=nf;
         msg.textContent=chk.checked?'저장했어요. 다음 답변부터 지침으로 반영돼요.':'저장했어요.';draw()}
-      catch(e){msg.textContent=`지침을 서버에 저장하지 못했어요. 서버가 켜져 있는지 확인해 주세요. (${(e&&e.code)||'error'})`}
+      catch(e){msg.textContent=errText(e)}
       finally{save.disabled=false}};
     box.append(rb,ta,row);w.append(box);return w}
   function exportAll(){
@@ -724,7 +790,7 @@ const SCHEMA={
     const bar=mk('div','ed-bar'),msg=mk('p','adm-msg');
     const save=mk('button','btn',g?'저장':'추가'),close=btnSm('닫기','btn ghost'),del=btnSm('삭제','btn danger');
     save.type='button';del.hidden=!g;let arm=false;
-    const fail=e=>{msg.textContent=`서버에 저장하지 못했어요. 서버가 켜져 있는지 확인해 주세요. (${(e&&e.code)||'error'})`};
+    const fail=e=>{msg.textContent=errText(e)};
     save.onclick=async()=>{
       const text=ta.value.trim();if(!text){msg.textContent='지침 내용을 입력하세요.';ta.focus();return}
       save.disabled=true;
@@ -741,11 +807,14 @@ const SCHEMA={
     head.append(mk('h3',null,'챗봇에 전달되는 지침'),close);
     const pre=mk('pre','preview','불러오는 중이에요.');
     ed.append(head,mk('p','src','고객이 질문할 때마다 서버가 아래 내용을 챗봇의 시스템 지시문으로 넣어요. 상품 목록·주문 조회·개인정보 보호 규칙이 지침보다 우선이에요.'),pre);
-    GUIDE.preview().then(p=>{pre.textContent=p.section||'(사용 중인 지침이 없어요)'}).catch(e=>{pre.textContent=`서버에서 불러오지 못했어요. (${(e&&e.code)||'error'})`})}
+    GUIDE.preview().then(p=>{pre.textContent=p.section||'(사용 중인 지침이 없어요)'}).catch(e=>{pre.textContent=errText(e).replace('저장하지','불러오지')})}
   admRender=draw;
 })();
 
-function route(){const adm=location.hash==='#admin';document.body.classList.toggle('admin-mode',adm);if(adm)admRender()}
+function route(){const adm=location.hash==='#admin';document.body.classList.toggle('admin-mode',adm);
+  if(adm){admRender();
+    // Firebase에서는 관리자 화면을 처음 열 때 로그인 기능을 준비하고, 로그인 상태에 맞춰 다시 그림
+    if(!FB.ready)FB.init().then(ok=>{if(ok)afterAuthChange();else admRender()})}}
 window.addEventListener('hashchange',route);route();
 initData();
 </script>

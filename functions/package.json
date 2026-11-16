@@ -1,0 +1,14 @@
+{
+  "name": "old-stock-chatbot-functions",
+  "private": true,
+  "description": "OLD STOCK 챗봇 Firebase Cloud Functions (서버 API)",
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
+    "firebase-admin": "^14.5.1",
+    "firebase-functions": "^7.4.0"
+  }
+}
